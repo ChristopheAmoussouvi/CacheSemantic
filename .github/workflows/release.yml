@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: |
+        cp .env.example .env
+        echo "OPENAI_API_KEY=test_key" >> .env
+        python validate.py
+    
+    - name: Create Release Archive
+      run: |
+        # Créer une archive sans les fichiers de cache et tests
+        mkdir -p release
+        cp -r src/ app.py requirements.txt README.md QUICKSTART.md .env.example .streamlit/ start.bat LICENSE CONTRIBUTING.md release/
+        cd release
+        tar -czf ../CacheSemantic-${GITHUB_REF#refs/tags/}.tar.gz .
+        cd ..
+        zip -r CacheSemantic-${GITHUB_REF#refs/tags/}.zip release/
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## 🚀 AI Data Interaction Agent - Release ${{ github.ref }}
+          
+          ### 🌟 Features
+          - Natural language interaction with CSV/Excel data
+          - FAISS-based semantic caching for optimal performance
+          - ChromaDB vector database for persistent storage
+          - Automatic data visualization generation
+          - Modern Streamlit interface
+          
+          ### 📦 Installation
+          1. Download and extract the archive
+          2. Copy `.env.example` to `.env` and add your OpenAI API key
+          3. Install dependencies: `pip install -r requirements.txt`
+          4. Run: `streamlit run app.py`
+          
+          ### 📚 Documentation
+          See README.md and QUICKSTART.md for detailed instructions.
+          
+          ### 🐛 Bug Reports
+          Please report issues at: https://github.com/ChristopheAmoussouvi/CacheSemantic/issues
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./CacheSemantic-${{ github.ref_name }}.tar.gz
+        asset_name: CacheSemantic-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip

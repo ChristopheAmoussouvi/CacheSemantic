@@ -1,0 +1,83 @@
+# Fichiers Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environnements virtuels
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+
+# Fichiers de configuration sensibles
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Données et caches
+/data/*.csv
+/data/*.xlsx
+/data/*.xls
+/cache/
+/chroma_db/
+/exports/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Modèles ML téléchargés
+models/
+*.pkl
+*.joblib
+
+# Fichiers temporaires
+temp/
+tmp/
+*.tmp

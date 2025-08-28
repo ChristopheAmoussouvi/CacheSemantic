@@ -1,0 +1,27 @@
+[global]
+# Configuration générale de Streamlit
+
+# Désactiver le message de démarrage
+showWarningOnDirectExecution = false
+
+# Configuration du serveur
+[server]
+# Port par défaut
+port = 8501
+
+# Autoriser les uploads de fichiers
+maxUploadSize = 200
+
+# Configuration du navigateur
+[browser]
+# Ne pas ouvrir automatiquement le navigateur
+gatherUsageStats = false
+
+# Configuration du thème
+[theme]
+# Couleurs personnalisées
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"

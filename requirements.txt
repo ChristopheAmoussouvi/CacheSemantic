@@ -1,0 +1,14 @@
+streamlit
+langchain
+langchain-community
+langchain-openai
+langchain-experimental
+chromadb
+faiss-cpu
+pandas
+numpy
+matplotlib
+seaborn
+openpyxl
+python-dotenv
+sentence-transformers

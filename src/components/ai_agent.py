@@ -1,464 +1,272 @@
-"""
-Agent IA utilisant LangChain pour l'interaction en langage naturel avec les données.
-Intègre le cache sémantique et la génération de visualisations.
-"""
+# Agent IA local sans dependances LLM
 
-import os
-import json
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import base64
-from io import BytesIO
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional
 import logging
 
-from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain_community.llms import OpenAI
-from langchain_openai import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import HumanMessage, AIMessage
-from langchain.tools import BaseTool
-
-from .semantic_cache import SemanticCache
+from .simple_cache import SimpleCache
 from .data_manager import DataManager
+from .decision_tree_chatbot import DecisionTreeChatbot
+from .visualization_manager import VisualizationManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class VisualizationTool(BaseTool):
-    """Outil personnalisé pour générer des visualisations."""
-    
-    name: str = "create_visualization"
-    description: str = """
-    Créer des visualisations de données avec matplotlib/seaborn.
-    Paramètres attendus en JSON:
-    {
-        "plot_type": "histogram|scatter|line|bar|heatmap|boxplot",
-        "data": "données au format dict ou liste",
-        "x_col": "nom de la colonne x",
-        "y_col": "nom de la colonne y (optionnel)",
-        "title": "titre du graphique",
-        "style": "style du graphique (optionnel)"
-    }
-    """
-    
-    def _run(self, query: str, run_manager=None) -> str:
-        """Exécute la création de visualisation."""
-        try:
-            # Parser les paramètres JSON
-            params = json.loads(query)
-            return self._create_plot(params)
-        except Exception as e:
-            return f"Erreur lors de la création de la visualisation: {str(e)}"
-    
-    def _create_plot(self, params: Dict[str, Any]) -> str:
-        """Crée le graphique selon les paramètres."""
-        try:
-            plot_type = params.get('plot_type', 'bar')
-            data = params.get('data', {})
-            x_col = params.get('x_col')
-            y_col = params.get('y_col')
-            title = params.get('title', 'Visualisation')
-            
-            # Convertir les données en DataFrame
-            if isinstance(data, dict):
-                df = pd.DataFrame(data)
-            elif isinstance(data, list):
-                df = pd.DataFrame(data)
-            else:
-                return "Format de données non valide"
-            
-            # Configurer le style
-            plt.style.use('seaborn-v0_8' if 'seaborn-v0_8' in plt.style.available else 'default')
-            fig, ax = plt.subplots(figsize=(10, 6))
-            
-            # Créer le graphique selon le type
-            if plot_type == 'histogram':
-                if x_col and x_col in df.columns:
-                    ax.hist(df[x_col].dropna(), bins=20, alpha=0.7)
-                    ax.set_xlabel(x_col)
-                    ax.set_ylabel('Fréquence')
-            
-            elif plot_type == 'scatter':
-                if x_col and y_col and x_col in df.columns and y_col in df.columns:
-                    ax.scatter(df[x_col], df[y_col], alpha=0.6)
-                    ax.set_xlabel(x_col)
-                    ax.set_ylabel(y_col)
-            
-            elif plot_type == 'line':
-                if x_col and y_col and x_col in df.columns and y_col in df.columns:
-                    ax.plot(df[x_col], df[y_col], marker='o')
-                    ax.set_xlabel(x_col)
-                    ax.set_ylabel(y_col)
-            
-            elif plot_type == 'bar':
-                if x_col and x_col in df.columns:
-                    if y_col and y_col in df.columns:
-                        ax.bar(df[x_col], df[y_col])
-                        ax.set_ylabel(y_col)
-                    else:
-                        value_counts = df[x_col].value_counts()
-                        ax.bar(range(len(value_counts)), value_counts.values)
-                        ax.set_xticks(range(len(value_counts)))
-                        ax.set_xticklabels(value_counts.index, rotation=45)
-                        ax.set_ylabel('Nombre')
-                    ax.set_xlabel(x_col)
-            
-            elif plot_type == 'heatmap':
-                # Sélectionner seulement les colonnes numériques
-                numeric_df = df.select_dtypes(include=['number'])
-                if not numeric_df.empty:
-                    correlation_matrix = numeric_df.corr()
-                    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', ax=ax)
-                else:
-                    return "Aucune donnée numérique pour créer une heatmap"
-            
-            elif plot_type == 'boxplot':
-                if x_col and x_col in df.columns:
-                    if df[x_col].dtype in ['float64', 'int64']:
-                        ax.boxplot(df[x_col].dropna())
-                        ax.set_ylabel(x_col)
-                    else:
-                        return f"La colonne {x_col} n'est pas numérique"
-            
-            # Ajouter le titre
-            ax.set_title(title)
-            plt.tight_layout()
-            
-            # Convertir en base64 pour l'affichage
-            buffer = BytesIO()
-            plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-            buffer.seek(0)
-            plot_base64 = base64.b64encode(buffer.getvalue()).decode()
-            plt.close()
-            
-            return f"VISUALIZATION_CREATED:{plot_base64}"
-            
-        except Exception as e:
-            return f"Erreur lors de la création du graphique: {str(e)}"
-
-
-class AIAgent:
-    """
-    Agent IA pour l'interaction en langage naturel avec les données.
-    
-    Intègre le cache sémantique, ChromaDB et la génération de visualisations.
-    """
-    
+class LocalAIAgent:
     def __init__(
         self,
-        openai_api_key: str,
         data_manager: DataManager,
-        semantic_cache: SemanticCache,
-        model_name: str = "gpt-3.5-turbo",
-        temperature: float = 0.1
+        simple_cache: SimpleCache,
+        viz_manager: Optional[VisualizationManager] = None
     ):
-        """
-        Initialise l'agent IA.
-        
-        Args:
-            openai_api_key: Clé API OpenAI
-            data_manager: Instance du gestionnaire de données
-            semantic_cache: Instance du cache sémantique
-            model_name: Nom du modèle LLM à utiliser
-            temperature: Température pour le modèle
-        """
         self.data_manager = data_manager
-        self.semantic_cache = semantic_cache
-        
-        # Initialiser le modèle LLM
-        self.llm = ChatOpenAI(
-            api_key=openai_api_key,
-            model=model_name,
-            temperature=temperature
-        )
-        
-        # Mémoire de conversation
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True
-        )
-        
-        # Outil de visualisation
-        self.viz_tool = VisualizationTool()
-        
-        # Agent pandas (sera créé dynamiquement selon les données)
-        self.current_agent = None
+        self.simple_cache = simple_cache
+        self.viz_manager = viz_manager or VisualizationManager()
+        self.chatbot = DecisionTreeChatbot()
         self.current_dataframe = None
-        
-        logger.info("Agent IA initialisé")
+        self.current_file_info = None
+        self.conversation_history = []
+        logger.info("Agent IA local initialise")
     
     def load_data_for_analysis(self, file_path: str) -> bool:
-        """
-        Charge des données pour l'analyse directe avec pandas.
-        
-        Args:
-            file_path: Chemin vers le fichier de données
-            
-        Returns:
-            True si le chargement a réussi
-        """
         try:
-            # Charger le fichier dans un DataFrame
             if file_path.endswith('.csv'):
                 self.current_dataframe = pd.read_csv(file_path)
             elif file_path.endswith(('.xlsx', '.xls')):
                 self.current_dataframe = pd.read_excel(file_path)
             else:
-                logger.error("Format de fichier non supporté")
+                logger.error("Format de fichier non supporte")
                 return False
             
-            # Créer un agent pandas
-            self.current_agent = create_pandas_dataframe_agent(
-                llm=self.llm,
-                df=self.current_dataframe,
-                verbose=True,
-                allow_dangerous_code=True,  # Nécessaire pour l'exécution de code
-                handle_parsing_errors=True
-            )
+            self.current_file_info = {
+                'file_path': file_path,
+                'shape': self.current_dataframe.shape,
+                'columns': list(self.current_dataframe.columns),
+                'dtypes': dict(self.current_dataframe.dtypes.astype(str))
+            }
             
-            logger.info(f"Données chargées: {len(self.current_dataframe)} lignes, {len(self.current_dataframe.columns)} colonnes")
+            logger.info("Donnees chargees: %d lignes, %d colonnes", 
+                       len(self.current_dataframe), len(self.current_dataframe.columns))
             return True
             
         except Exception as e:
-            logger.error(f"Erreur lors du chargement des données: {e}")
+            logger.error("Erreur lors du chargement des donnees: %s", str(e))
             return False
     
     def process_query(self, query: str, use_cache: bool = True) -> Dict[str, Any]:
-        """
-        Traite une requête utilisateur en langage naturel.
-        
-        Args:
-            query: Requête utilisateur
-            use_cache: Utiliser le cache sémantique
-            
-        Returns:
-            Dictionnaire contenant la réponse et les métadonnées
-        """
         try:
-            # Vérifier le cache sémantique en premier
+            self.conversation_history.append({'role': 'user', 'content': query})
+            
             if use_cache:
-                cached_result = self.semantic_cache.query(query)
+                cached_result = self.simple_cache.get(query)
                 if cached_result:
-                    logger.info("Réponse récupérée du cache sémantique")
-                    return {
+                    logger.info("Reponse recuperee du cache semantique")
+                    response = {
                         'response': cached_result['response'],
                         'source': 'cache',
                         'similarity_score': cached_result.get('similarity_score'),
                         'visualization': cached_result.get('visualization')
                     }
+                    self.conversation_history.append({'role': 'assistant', 'content': response['response']})
+                    return response
             
-            # Déterminer le type de requête
-            query_type = self._classify_query(query)
+            analysis = self.chatbot.analyze_query(query, self.current_dataframe)
             
-            if query_type == 'visualization':
-                result = self._handle_visualization_query(query)
-            elif query_type == 'data_analysis':
-                result = self._handle_data_analysis_query(query)
+            if not analysis['success']:
+                response = {
+                    'response': analysis['message'],
+                    'source': 'chatbot',
+                    'success': False
+                }
+                self.conversation_history.append({'role': 'assistant', 'content': response['response']})
+                return response
+            
+            if analysis['action'] == 'summary':
+                result = self._handle_summary_request(analysis['parameters'])
+            elif analysis['action'] == 'visualization':
+                result = self._handle_visualization_request(analysis['parameters'])
+            elif analysis['action'] == 'analysis':
+                result = self._handle_analysis_request(analysis['parameters'])
             else:
-                result = self._handle_general_query(query)
+                result = {
+                    'response': "Je ne sais pas comment traiter cette requete.",
+                    'source': 'chatbot',
+                    'success': False
+                }
             
-            # Ajouter au cache si la requête a réussi
             if use_cache and result.get('success', True):
-                self.semantic_cache.add(
-                    query_text=query,
-                    response=result['response'],
-                    metadata={
-                        'query_type': query_type,
-                        'visualization': result.get('visualization')
-                    }
-                )
+                self.simple_cache.put(query, result)
             
+            self.conversation_history.append({'role': 'assistant', 'content': result['response']})
             return result
             
         except Exception as e:
-            logger.error(f"Erreur lors du traitement de la requête: {e}")
-            return {
-                'response': f"Désolé, une erreur s'est produite: {str(e)}",
+            logger.error("Erreur lors du traitement de la requete: %s", str(e))
+            error_response = {
+                'response': f"Desole, une erreur s'est produite: {str(e)}",
                 'source': 'error',
                 'success': False
             }
+            self.conversation_history.append({'role': 'assistant', 'content': error_response['response']})
+            return error_response
     
-    def _classify_query(self, query: str) -> str:
-        """Classifie le type de requête."""
-        visualization_keywords = [
-            'graphique', 'graph', 'plot', 'visualisation', 'chart',
-            'histogram', 'scatter', 'ligne', 'barres', 'heatmap',
-            'boxplot', 'distribution', 'corrélation', 'trend'
-        ]
-        
-        query_lower = query.lower()
-        
-        if any(keyword in query_lower for keyword in visualization_keywords):
-            return 'visualization'
-        elif self.current_dataframe is not None:
-            return 'data_analysis'
-        else:
-            return 'general'
-    
-    def _handle_visualization_query(self, query: str) -> Dict[str, Any]:
-        """Traite une requête de visualisation."""
+    def _handle_summary_request(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            if self.current_dataframe is None or self.current_agent is None:
+            if self.current_dataframe is None:
                 return {
-                    'response': "Aucune donnée n'est actuellement chargée pour créer des visualisations.",
-                    'source': 'agent',
+                    'response': "Aucune donnee n'est disponible pour creer un resume.",
+                    'source': 'local_agent',
                     'success': False
                 }
             
-            # Utiliser l'agent pandas pour analyser la requête et créer les paramètres
-            analysis_prompt = f"""
-            Analysez cette requête de visualisation: "{query}"
+            summary_parts = []
+            summary_parts.append("Resume des donnees")
+            summary_parts.append(f"- Nombre de lignes: {len(self.current_dataframe):,}")
+            summary_parts.append(f"- Nombre de colonnes: {len(self.current_dataframe.columns)}")
             
-            Données disponibles:
-            - Colonnes: {list(self.current_dataframe.columns)}
-            - Types: {dict(self.current_dataframe.dtypes)}
-            - Shape: {self.current_dataframe.shape}
+            summary_parts.append("Colonnes disponibles:")
+            for col in self.current_dataframe.columns:
+                dtype = str(self.current_dataframe[col].dtype)
+                null_count = self.current_dataframe[col].isnull().sum()
+                summary_parts.append(f"- {col} ({dtype})")
+                if null_count > 0:
+                    summary_parts.append(f"  {null_count} valeurs manquantes")
             
-            Créez les paramètres JSON pour la visualisation au format:
-            {{
-                "plot_type": "histogram|scatter|line|bar|heatmap|boxplot",
-                "data": <échantillon des données>,
-                "x_col": "nom_colonne_x",
-                "y_col": "nom_colonne_y",
-                "title": "titre descriptif"
-            }}
+            numeric_cols = self.current_dataframe.select_dtypes(include=['number']).columns
+            if len(numeric_cols) > 0:
+                summary_parts.append("Statistiques numeriques:")
+                for col in numeric_cols[:5]:
+                    stats = self.current_dataframe[col].describe()
+                    summary_parts.append(f"- {col}: Moy={stats['mean']:.2f}, Min={stats['min']:.2f}, Max={stats['max']:.2f}")
             
-            Retournez SEULEMENT le JSON, sans autre texte.
-            """
+            response_text = "\n".join(summary_parts)
             
-            # Obtenir les paramètres de visualisation
-            result = self.current_agent.invoke({"input": analysis_prompt})
-            viz_params = result.get("output", "") if isinstance(result, dict) else str(result)
-            
-            # Nettoyer la réponse pour extraire le JSON
-            import re
-            json_match = re.search(r'\{.*\}', viz_params, re.DOTALL)
-            if json_match:
-                viz_params = json_match.group(0)
-            
-            # Créer la visualisation
-            viz_result = self.viz_tool._run(viz_params)
-            
-            if viz_result.startswith("VISUALIZATION_CREATED:"):
-                plot_base64 = viz_result.replace("VISUALIZATION_CREATED:", "")
-                return {
-                    'response': f"Visualisation créée pour: {query}",
-                    'source': 'agent',
-                    'success': True,
-                    'visualization': plot_base64
-                }
-            else:
-                return {
-                    'response': f"Erreur lors de la création de la visualisation: {viz_result}",
-                    'source': 'agent',
-                    'success': False
-                }
-                
-        except Exception as e:
-            logger.error(f"Erreur lors de la visualisation: {e}")
             return {
-                'response': f"Erreur lors de la création de la visualisation: {str(e)}",
-                'source': 'agent',
+                'response': response_text,
+                'source': 'local_agent',
+                'success': True,
+                'action': 'summary'
+            }
+            
+        except Exception as e:
+            logger.error("Erreur lors de la generation du resume: %s", str(e))
+            return {
+                'response': f"Erreur lors de la generation du resume: {str(e)}",
+                'source': 'local_agent',
                 'success': False
             }
     
-    def _handle_data_analysis_query(self, query: str) -> Dict[str, Any]:
-        """Traite une requête d'analyse de données."""
+    def _handle_visualization_request(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            if self.current_agent is None:
+            if self.current_dataframe is None:
                 return {
-                    'response': "Aucune donnée n'est actuellement chargée pour l'analyse.",
-                    'source': 'agent',
+                    'response': "Aucune donnee n'est disponible pour creer une visualisation.",
+                    'source': 'local_agent',
                     'success': False
                 }
             
-            # Utiliser l'agent pandas pour analyser les données
-            result = self.current_agent.invoke({"input": query})
-            response = result.get("output", "") if isinstance(result, dict) else str(result)
+            viz_type = parameters.get('viz_type', 'bar_chart')
+            columns = parameters.get('columns', {})
+            title = parameters.get('title', 'Visualisation des donnees')
+            
+            viz_base64, from_cache = self.viz_manager.get_or_create_visualization(
+                viz_type=viz_type,
+                dataframe=self.current_dataframe,
+                columns=columns,
+                title=title
+            )
+            
+            cache_info = " (recuperee du cache)" if from_cache else " (nouvellement creee)"
+            response_text = f"Visualisation creee: {title}{cache_info}"
             
             return {
-                'response': response,
-                'source': 'pandas_agent',
-                'success': True
+                'response': response_text,
+                'source': 'local_agent',
+                'success': True,
+                'visualization': viz_base64,
+                'action': 'visualization',
+                'from_cache': from_cache
             }
             
         except Exception as e:
-            logger.error(f"Erreur lors de l'analyse des données: {e}")
+            logger.error("Erreur lors de la creation de la visualisation: %s", str(e))
+            return {
+                'response': f"Erreur lors de la creation de la visualisation: {str(e)}",
+                'source': 'local_agent',
+                'success': False
+            }
+    
+    def _handle_analysis_request(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            if self.current_dataframe is None:
+                return {
+                    'response': "Aucune donnee n'est disponible pour l'analyse.",
+                    'source': 'local_agent',
+                    'success': False
+                }
+            
+            analysis_type = parameters.get('analysis_type', 'describe')
+            columns = parameters.get('columns', [])
+            
+            valid_columns = [col for col in columns if col in self.current_dataframe.columns]
+            if not valid_columns:
+                valid_columns = list(self.current_dataframe.columns)
+            
+            result_parts = []
+            
+            if analysis_type == 'mean':
+                numeric_cols = [col for col in valid_columns if self.current_dataframe[col].dtype in ['float64', 'int64']]
+                if numeric_cols:
+                    result_parts.append("Moyennes calculees:")
+                    for col in numeric_cols:
+                        mean_val = self.current_dataframe[col].mean()
+                        result_parts.append(f"- {col}: {mean_val:.2f}")
+                else:
+                    result_parts.append("Aucune colonne numerique disponible pour calculer la moyenne.")
+            
+            elif analysis_type == 'describe':
+                numeric_cols = [col for col in valid_columns if self.current_dataframe[col].dtype in ['float64', 'int64']]
+                if numeric_cols:
+                    result_parts.append("Analyse descriptive:")
+                    desc = self.current_dataframe[numeric_cols].describe()
+                    for col in numeric_cols[:5]:
+                        stats = desc[col]
+                        result_parts.append(f"{col}:")
+                        result_parts.append(f"  - Moyenne: {stats['mean']:.2f}")
+                        result_parts.append(f"  - Ecart-type: {stats['std']:.2f}")
+                        result_parts.append(f"  - Min: {stats['min']:.2f}, Max: {stats['max']:.2f}")
+                        result_parts.append(f"  - Mediane: {stats['50%']:.2f}")
+                else:
+                    result_parts.append("Aucune colonne numerique disponible pour l'analyse descriptive.")
+            
+            response_text = "\n".join(result_parts) if result_parts else "Aucun resultat d'analyse disponible."
+            
+            return {
+                'response': response_text,
+                'source': 'local_agent',
+                'success': True,
+                'action': 'analysis'
+            }
+            
+        except Exception as e:
+            logger.error("Erreur lors de l'analyse: %s", str(e))
             return {
                 'response': f"Erreur lors de l'analyse: {str(e)}",
-                'source': 'agent',
-                'success': False
-            }
-    
-    def _handle_general_query(self, query: str) -> Dict[str, Any]:
-        """Traite une requête générale."""
-        try:
-            # Rechercher dans ChromaDB pour le contexte
-            search_results = self.data_manager.search(query, n_results=3)
-            
-            # Construire le contexte
-            context = "Informations disponibles dans la base de données:\n"
-            for result in search_results:
-                context += f"- {result['document'][:200]}...\n"
-            
-            # Construire le prompt avec contexte
-            prompt = f"""
-            Contexte des données disponibles:
-            {context}
-            
-            Question de l'utilisateur: {query}
-            
-            Répondez de manière claire et concise en français, en utilisant les informations disponibles.
-            Si vous ne trouvez pas d'information pertinente, dites-le clairement.
-            """
-            
-            # Obtenir la réponse du LLM
-            response = self.llm.invoke([HumanMessage(content=prompt)])
-            
-            return {
-                'response': response.content,
-                'source': 'llm_with_context',
-                'success': True,
-                'context_used': len(search_results) > 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Erreur lors de la requête générale: {e}")
-            return {
-                'response': f"Erreur lors du traitement: {str(e)}",
-                'source': 'agent',
+                'source': 'local_agent',
                 'success': False
             }
     
     def get_conversation_history(self) -> List[Dict[str, str]]:
-        """Retourne l'historique de conversation."""
-        try:
-            messages = self.memory.chat_memory.messages
-            history = []
-            
-            for message in messages:
-                if isinstance(message, HumanMessage):
-                    history.append({'role': 'user', 'content': message.content})
-                elif isinstance(message, AIMessage):
-                    history.append({'role': 'assistant', 'content': message.content})
-            
-            return history
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération de l'historique: {e}")
-            return []
+        return self.conversation_history.copy()
     
     def clear_conversation_history(self):
-        """Efface l'historique de conversation."""
-        self.memory.clear()
-        logger.info("Historique de conversation effacé")
+        self.conversation_history = []
+        logger.info("Historique de conversation efface")
     
     def get_data_summary(self) -> Dict[str, Any]:
-        """Retourne un résumé des données actuellement chargées."""
         if self.current_dataframe is None:
-            return {'message': 'Aucune donnée chargée'}
+            return {'message': 'Aucune donnee chargee'}
         
         return {
             'shape': self.current_dataframe.shape,
@@ -467,3 +275,9 @@ class AIAgent:
             'missing_values': dict(self.current_dataframe.isnull().sum()),
             'sample': self.current_dataframe.head(3).to_dict('records')
         }
+    
+    def get_help_message(self) -> str:
+        return self.chatbot.get_help_message()
+    
+    def get_viz_stats(self) -> Dict[str, Any]:
+        return self.viz_manager.get_stats()

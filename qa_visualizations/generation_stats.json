@@ -1,0 +1,19 @@
+{
+  "total_pairs": 59,
+  "datasets": [
+    "ventes",
+    "financier",
+    "clients",
+    "satisfaction"
+  ],
+  "viz_types": [
+    "line",
+    "scatter",
+    "heatmap",
+    "hist",
+    "bar",
+    "box"
+  ],
+  "generation_date": "2025-09-22T03:22:00.885302",
+  "method": "simplified_fallback"
+}

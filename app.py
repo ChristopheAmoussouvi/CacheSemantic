@@ -13,7 +13,7 @@ import logging
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Agent IA - Analyse de Données",
+    page_title="Agent IA Local - Analyse de Données",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -21,8 +21,10 @@ st.set_page_config(
 
 # Imports des composants
 from src.components.data_manager import DataManager
-from src.components.semantic_cache import SemanticCache
-from src.components.ai_agent import AIAgent
+from src.components.simple_cache import SimpleCache
+from src.components.ai_agent import LocalAIAgent
+from src.utils.data_generator import DataGenerator
+from src.utils.example_prompts import ExamplePrompts
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -32,8 +34,7 @@ logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 load_dotenv()
 
-# Configuration globale
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Configuration globale (sans OpenAI)
 CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "./chroma_db")
 SEMANTIC_CACHE_THRESHOLD = float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.85"))
 CACHE_DIR = os.getenv("FAISS_INDEX_PATH", "./cache")
@@ -43,24 +44,19 @@ CACHE_DIR = os.getenv("FAISS_INDEX_PATH", "./cache")
 def initialize_components():
     """Initialise les composants de l'application (mise en cache)."""
     try:
-        # Initialiser les composants
+        # Initialiser les composants locaux
         data_manager = DataManager(db_path=CHROMA_DB_PATH)
-        semantic_cache = SemanticCache(
-            threshold=SEMANTIC_CACHE_THRESHOLD,
+        simple_cache = SimpleCache(
             cache_dir=CACHE_DIR
         )
         
-        if not OPENAI_API_KEY:
-            st.error("⚠️ Clé API OpenAI manquante. Veuillez configurer votre fichier .env")
-            st.stop()
-        
-        ai_agent = AIAgent(
-            openai_api_key=OPENAI_API_KEY,
+        # Agent IA local (sans OpenAI)
+        ai_agent = LocalAIAgent(
             data_manager=data_manager,
-            semantic_cache=semantic_cache
+            simple_cache=simple_cache
         )
         
-        return data_manager, semantic_cache, ai_agent
+        return data_manager, simple_cache, ai_agent
     
     except Exception as e:
         st.error(f"Erreur lors de l'initialisation: {e}")
@@ -71,14 +67,15 @@ def main():
     """Fonction principale de l'application Streamlit."""
     
     # Titre de l'application
-    st.title("🤖 Agent IA - Analyse de Données")
+    st.title("🤖 Agent IA Local - Analyse de Données")
     st.markdown("""
-    **Interagissez avec vos données en langage naturel**  
-    Chargez vos fichiers CSV ou Excel et posez des questions en français !
+    **Interagissez avec vos données en langage naturel (100% local)**  
+    Chargez vos fichiers CSV ou Excel et posez des questions en français !  
+    ✨ *Fonctionne entièrement en local, sans API externe*
     """)
     
     # Initialiser les composants
-    data_manager, semantic_cache, ai_agent = initialize_components()
+    data_manager, simple_cache, ai_agent = initialize_components()
     
     # Sidebar pour la gestion des fichiers
     with st.sidebar:
@@ -110,7 +107,7 @@ def main():
                     
                     if success_db and success_agent:
                         st.success(f"✅ Fichier '{uploaded_file.name}' chargé avec succès!")
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("❌ Erreur lors du chargement du fichier")
         
@@ -129,20 +126,128 @@ def main():
                     if st.button(f"🗑️ Supprimer", key=f"delete_{file_id}"):
                         data_manager.remove_file(file_id)
                         st.success(f"Fichier {info['file_name']} supprimé")
-                        st.experimental_rerun()
+                        st.rerun()
         else:
             st.info("Aucun fichier chargé")
         
         # Statistiques du cache
-        st.subheader("🧠 Cache Sémantique")
-        cache_stats = semantic_cache.get_stats()
-        st.metric("Entrées en cache", cache_stats['total_entries'])
-        st.metric("Seuil de similarité", f"{cache_stats['threshold']:.2f}")
+        st.subheader("🧠 Cache Simple")
+        cache_stats = simple_cache.get_stats()
+        st.metric("Entrées en cache", cache_stats['cache_size'])
+        st.metric("Fichier de cache", os.path.basename(cache_stats['cache_file']))
         
         if st.button("🧹 Vider le cache"):
-            semantic_cache.clear()
+            simple_cache.clear()
             st.success("Cache vidé !")
+        
+        # Section des données test
+        st.subheader("🧪 Données Test")
+        
+        # Générateur de données
+        data_generator = DataGenerator()
+        
+        # Sélection du type de données
+        dataset_type = st.selectbox(
+            "Choisir un dataset test:",
+            ["Aucun", "Données de Ventes", "Données Clients", "Données Financières", "Enquête de Satisfaction"],
+            help="Génère des données réalistes pour tester l'application"
+        )
+        
+        if dataset_type != "Aucun":
+            if st.button("📊 Générer et Charger"):
+                with st.spinner(f"Génération du dataset '{dataset_type}'..."):
+                    # Générer les données
+                    dataset_mapping = {
+                        "Données de Ventes": data_generator.generate_sales_data,
+                        "Données Clients": data_generator.generate_customer_data,
+                        "Données Financières": data_generator.generate_financial_data,
+                        "Enquête de Satisfaction": data_generator.generate_survey_data
+                    }
+                    
+                    df = dataset_mapping[dataset_type]()
+                    
+                    # Sauvegarder temporairement
+                    filename = dataset_type.lower().replace(" ", "_").replace("é", "e") + "_test.csv"
+                    temp_path = f"./data/{filename}"
+                    os.makedirs("./data", exist_ok=True)
+                    df.to_csv(temp_path, index=False, encoding='utf-8')
+                    
+                    # Charger dans le système
+                    success_db = data_manager.load_data_file(temp_path)
+                    success_agent = ai_agent.load_data_for_analysis(temp_path)
+                    
+                    if success_db and success_agent:
+                        st.success(f"✅ Dataset '{dataset_type}' généré et chargé!")
+                        st.info(f"📊 {len(df)} lignes, {len(df.columns)} colonnes")
+                        st.rerun()
+                    else:
+                        st.error("❌ Erreur lors du chargement")
+        
+        # Information sur le mode local
+        st.subheader("🏠 Mode Local")
+        st.success("✅ Fonctionnement 100% local")
+        st.info("🔒 Aucune donnée envoyée à des services externes")
+        st.info("🚀 Chatbot basé sur un arbre de décision")
+        st.info("💾 Visualisations stockées dans ChromaDB")
     
+    # Section des prompts d'exemples
+    with st.expander("💡 Prompts d'Exemples", expanded=False):
+        st.write("Cliquez sur un exemple pour l'utiliser :")
+        
+        # Initialiser les prompts
+        example_prompts = ExamplePrompts()
+        
+        # Onglets par catégorie
+        categories = example_prompts.get_categories()
+        if categories:
+            # Créer des colonnes pour les onglets
+            cols = st.columns(min(len(categories), 4))
+            
+            # Sélection de catégorie
+            selected_category = st.selectbox(
+                "Choisir une catégorie:",
+                categories,
+                help="Sélectionnez une catégorie pour voir les exemples correspondants"
+            )
+            
+            # Afficher les prompts de la catégorie sélectionnée
+            prompts = example_prompts.get_prompts_by_category(selected_category)
+            
+            if prompts:
+                st.write(f"**{selected_category}**")
+                
+                # Organiser en colonnes
+                cols = st.columns(2)
+                for i, (title, prompt) in enumerate(prompts):
+                    col = cols[i % 2]
+                    with col:
+                        if st.button(
+                            f"📋 {title}", 
+                            key=f"prompt_{selected_category}_{i}",
+                            help=prompt,
+                            use_container_width=True
+                        ):
+                            # Ajouter le prompt à l'input
+                            st.session_state.example_prompt = prompt
+                            st.rerun()
+        
+        # Section prompts rapides
+        st.write("**Prompts Rapides:**")
+        quick_cols = st.columns(4)
+        
+        quick_prompts = [
+            ("📊 Résumé", "Montre-moi un résumé des données"),
+            ("📈 Graphique", "Crée un graphique intéressant"),
+            ("🔍 Analyse", "Analyse les tendances principales"),
+            ("📋 Statistiques", "Donne-moi les statistiques descriptives")
+        ]
+        
+        for i, (icon_title, prompt) in enumerate(quick_prompts):
+            with quick_cols[i]:
+                if st.button(icon_title, key=f"quick_{i}", use_container_width=True):
+                    st.session_state.example_prompt = prompt
+                    st.rerun()
+
     # Interface de chat principale
     st.header("💬 Chat avec vos Données")
     
@@ -159,6 +264,36 @@ def main():
             if "visualization" in message:
                 display_visualization(message["visualization"])
     
+    # Gérer les prompts d'exemples
+    if "example_prompt" in st.session_state:
+        prompt = st.session_state.example_prompt
+        del st.session_state.example_prompt
+        
+        # Ajouter le message utilisateur
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Traiter la requête
+        with st.chat_message("assistant"):
+            with st.spinner("Analyse en cours..."):
+                result = ai_agent.process_query(prompt)
+                
+                # Afficher la réponse
+                st.markdown(result['response'])
+                
+                # Sauvegarder le message assistant
+                message_data = {"role": "assistant", "content": result['response']}
+                
+                # Afficher la visualisation si présente
+                if 'visualization' in result and result['visualization']:
+                    display_visualization(result['visualization'])
+                    message_data["visualization"] = result['visualization']
+                
+                st.session_state.messages.append(message_data)
+        
+        st.rerun()
+
     # Interface de saisie
     if prompt := st.chat_input("Posez votre question sur les données..."):
         # Ajouter le message utilisateur
@@ -177,9 +312,8 @@ def main():
                 # Afficher la source
                 source_emoji = {
                     'cache': '🧠 (Cache)',
-                    'pandas_agent': '🐼 (Analyse)',
-                    'llm_with_context': '🤖 (IA)',
-                    'agent': '🔧 (Agent)',
+                    'local_agent': '🤖 (Agent Local)',
+                    'chatbot': '🎯 (Chatbot)',
                     'error': '⚠️ (Erreur)'
                 }
                 st.caption(f"Source: {source_emoji.get(result.get('source', 'unknown'), '❓')}")
@@ -227,10 +361,10 @@ def main():
         
         with col3:
             st.markdown("""
-            **🔍 Questions Métier**
-            - "Quelle est la tendance des ventes ?"
-            - "Trouve les valeurs aberrantes"
-            - "Compare les performances par région"
+            **🔍 Analyses Statistiques**
+            - "Calcule la moyenne de [colonne]"
+            - "Quelle est la valeur maximale ?"
+            - "Montre les statistiques descriptives"
             """)
 
 
@@ -301,9 +435,9 @@ with tab3:
     st.header("⚙️ Configuration")
     
     # Statistiques générales
-    data_manager, semantic_cache, _ = initialize_components()
+    data_manager, simple_cache, ai_agent = initialize_components()
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.subheader("📊 Statistiques ChromaDB")
@@ -312,8 +446,21 @@ with tab3:
     
     with col2:
         st.subheader("🧠 Statistiques Cache")
-        cache_stats = semantic_cache.get_stats()
+        cache_stats = simple_cache.get_stats()
         st.json(cache_stats)
+    
+    with col3:
+        st.subheader("📈 Visualisations")
+        viz_stats = ai_agent.get_viz_stats()
+        st.json(viz_stats)
+    
+    # Information sur l'architecture locale
+    st.subheader("🏠 Architecture Locale")
+    st.success("✅ **Agent IA 100% Local**")
+    st.info("🎯 **Chatbot à arbre de décision** : Logique déterministe pour analyser les requêtes")
+    st.info("💾 **ChromaDB** : Base de données vectorielle locale pour données et visualisations")
+    st.info("🧠 **Cache FAISS** : Cache sémantique intelligent pour optimiser les réponses")
+    st.info("📊 **Visualisations Seaborn** : Graphiques générés et stockés localement")
     
     # Boutons d'administration
     st.subheader("🔧 Administration")
@@ -327,9 +474,9 @@ with tab3:
                 st.success("Base de données réinitialisée !")
     
     with col2:
-        if st.button("🧹 Vider le cache sémantique"):
-            semantic_cache.clear()
-            st.success("Cache sémantique vidé !")
+        if st.button("🧹 Vider le cache simple"):
+            simple_cache.clear()
+            st.success("Cache simple vidé !")
     
     with col3:
         if st.button("📝 Effacer l'historique de chat"):

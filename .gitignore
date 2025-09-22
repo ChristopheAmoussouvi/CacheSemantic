@@ -81,3 +81,31 @@ models/
 temp/
 tmp/
 *.tmp
+
+# Spécifique au projet AI Data Interaction Agent
+# ChromaDB persistant storage
+chroma_db/
+
+# Cache local
+cache/
+*.cache
+
+# Données temporaires uploadées
+data/*.csv
+data/*.xlsx
+data/*.xls
+!data/sample_*.csv  # Garder les fichiers d'exemple
+
+# Visualisations générées
+qa_visualizations/*.png
+exports/*.png
+exports/*.jpg
+
+# Index Q&A générés (peuvent être recréés)
+qa_visualizations/keyword_index.json
+qa_visualizations/dataset_index.json
+qa_visualizations/viz_type_index.json
+
+# Logs de l'application
+*.log
+logs/

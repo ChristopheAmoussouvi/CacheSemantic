@@ -1,0 +1,301 @@
+repondant_id,service_evalue,tranche_age,note_satisfaction,recommandation,date_reponse
+R0001,Service Client,18-25,3.6,Peut-être,2025-08-18
+R0002,Livraison,26-35,3.4,Oui,2025-09-09
+R0003,Site Web,18-25,3.7,Peut-être,2025-07-30
+R0004,Service Client,18-25,4.4,Oui,2025-08-26
+R0005,Livraison,56-65,4.0,Peut-être,2025-09-19
+R0006,Site Web,26-35,3.3,Peut-être,2025-07-01
+R0007,Site Web,46-55,5.0,Oui,2025-07-27
+R0008,Site Web,36-45,4.4,Oui,2025-09-02
+R0009,Prix,36-45,3.4,Non,2025-09-03
+R0010,Livraison,36-45,4.2,Oui,2025-09-11
+R0011,Prix,18-25,2.8,Non,2025-08-09
+R0012,Site Web,36-45,3.4,Oui,2025-07-26
+R0013,Site Web,18-25,3.4,Non,2025-09-12
+R0014,Site Web,36-45,2.3,Peut-être,2025-07-05
+R0015,Qualité Produit,56-65,2.8,Oui,2025-06-24
+R0016,Service Client,18-25,2.8,Peut-être,2025-08-24
+R0017,Qualité Produit,18-25,2.4,Oui,2025-09-10
+R0018,Prix,36-45,4.1,Non,2025-07-03
+R0019,Qualité Produit,26-35,2.8,Non,2025-08-08
+R0020,Livraison,65+,3.0,Non,2025-06-25
+R0021,Service Client,56-65,5.0,Peut-être,2025-09-01
+R0022,Site Web,65+,3.9,Oui,2025-09-02
+R0023,Prix,46-55,4.1,Non,2025-07-03
+R0024,Site Web,26-35,2.4,Peut-être,2025-08-12
+R0025,Service Client,26-35,3.1,Oui,2025-08-13
+R0026,Prix,36-45,3.9,Oui,2025-08-26
+R0027,Site Web,65+,3.2,Non,2025-08-26
+R0028,Prix,46-55,4.3,Peut-être,2025-07-26
+R0029,Livraison,36-45,3.3,Oui,2025-08-22
+R0030,Site Web,56-65,4.0,Non,2025-07-10
+R0031,Prix,56-65,3.7,Non,2025-08-07
+R0032,Livraison,26-35,5.0,Peut-être,2025-07-21
+R0033,Service Client,18-25,3.2,Oui,2025-09-03
+R0034,Livraison,65+,3.3,Non,2025-07-08
+R0035,Service Client,46-55,4.7,Non,2025-07-08
+R0036,Prix,56-65,3.2,Non,2025-07-14
+R0037,Service Client,65+,4.3,Peut-être,2025-09-08
+R0038,Site Web,36-45,2.2,Peut-être,2025-08-10
+R0039,Service Client,36-45,2.7,Non,2025-09-02
+R0040,Prix,18-25,3.4,Peut-être,2025-08-20
+R0041,Site Web,26-35,4.1,Peut-être,2025-09-09
+R0042,Qualité Produit,65+,4.2,Peut-être,2025-07-07
+R0043,Livraison,26-35,3.4,Non,2025-09-02
+R0044,Site Web,56-65,4.0,Oui,2025-07-08
+R0045,Qualité Produit,46-55,2.8,Oui,2025-09-08
+R0046,Qualité Produit,36-45,3.2,Oui,2025-09-15
+R0047,Livraison,56-65,3.8,Oui,2025-09-12
+R0048,Prix,18-25,4.0,Peut-être,2025-09-06
+R0049,Livraison,65+,4.4,Non,2025-07-14
+R0050,Livraison,36-45,2.4,Peut-être,2025-07-07
+R0051,Prix,26-35,3.8,Peut-être,2025-06-26
+R0052,Livraison,65+,3.8,Non,2025-08-02
+R0053,Qualité Produit,46-55,3.5,Peut-être,2025-07-27
+R0054,Service Client,26-35,4.0,Oui,2025-09-14
+R0055,Qualité Produit,18-25,4.0,Peut-être,2025-07-14
+R0056,Livraison,56-65,4.9,Oui,2025-09-22
+R0057,Service Client,65+,3.4,Peut-être,2025-09-15
+R0058,Livraison,18-25,3.0,Oui,2025-08-11
+R0059,Service Client,56-65,4.5,Oui,2025-08-18
+R0060,Prix,26-35,4.3,Peut-être,2025-09-06
+R0061,Site Web,56-65,3.8,Non,2025-08-22
+R0062,Prix,46-55,3.9,Oui,2025-09-10
+R0063,Service Client,65+,3.2,Non,2025-08-08
+R0064,Prix,46-55,3.0,Non,2025-09-16
+R0065,Service Client,18-25,3.9,Non,2025-08-10
+R0066,Service Client,26-35,4.6,Oui,2025-08-29
+R0067,Site Web,46-55,3.9,Oui,2025-07-30
+R0068,Livraison,36-45,4.6,Non,2025-08-22
+R0069,Service Client,46-55,4.3,Peut-être,2025-09-10
+R0070,Service Client,65+,3.6,Peut-être,2025-09-21
+R0071,Service Client,26-35,3.8,Oui,2025-08-01
+R0072,Prix,46-55,5.0,Oui,2025-08-02
+R0073,Service Client,26-35,3.5,Non,2025-09-22
+R0074,Prix,36-45,5.0,Non,2025-08-17
+R0075,Prix,65+,2.0,Peut-être,2025-07-13
+R0076,Prix,26-35,4.2,Oui,2025-08-16
+R0077,Livraison,18-25,3.3,Peut-être,2025-07-15
+R0078,Service Client,65+,3.9,Non,2025-09-15
+R0079,Service Client,56-65,4.3,Non,2025-07-20
+R0080,Site Web,26-35,1.9,Oui,2025-07-19
+R0081,Service Client,26-35,3.3,Oui,2025-07-08
+R0082,Service Client,65+,4.4,Oui,2025-08-02
+R0083,Service Client,56-65,5.0,Oui,2025-07-10
+R0084,Site Web,18-25,2.8,Peut-être,2025-09-12
+R0085,Prix,65+,3.5,Peut-être,2025-07-12
+R0086,Site Web,36-45,3.4,Non,2025-08-27
+R0087,Qualité Produit,26-35,4.2,Non,2025-08-03
+R0088,Livraison,65+,4.4,Peut-être,2025-08-15
+R0089,Prix,36-45,3.4,Oui,2025-09-21
+R0090,Prix,56-65,4.6,Peut-être,2025-09-10
+R0091,Service Client,56-65,4.3,Oui,2025-07-20
+R0092,Qualité Produit,26-35,4.3,Non,2025-09-14
+R0093,Livraison,36-45,3.2,Non,2025-09-02
+R0094,Prix,56-65,3.9,Peut-être,2025-08-15
+R0095,Site Web,65+,3.8,Peut-être,2025-09-21
+R0096,Site Web,36-45,2.6,Peut-être,2025-09-09
+R0097,Livraison,36-45,4.0,Oui,2025-09-09
+R0098,Site Web,26-35,3.7,Non,2025-08-17
+R0099,Site Web,26-35,3.5,Peut-être,2025-08-10
+R0100,Livraison,65+,3.9,Peut-être,2025-08-20
+R0101,Site Web,46-55,2.9,Non,2025-09-16
+R0102,Service Client,65+,3.8,Non,2025-08-18
+R0103,Service Client,18-25,2.9,Non,2025-09-06
+R0104,Qualité Produit,26-35,2.9,Peut-être,2025-07-28
+R0105,Site Web,65+,4.0,Non,2025-07-13
+R0106,Service Client,18-25,3.5,Oui,2025-06-26
+R0107,Livraison,56-65,5.0,Oui,2025-08-06
+R0108,Site Web,56-65,4.3,Oui,2025-07-29
+R0109,Livraison,18-25,3.4,Non,2025-08-07
+R0110,Service Client,36-45,3.7,Oui,2025-06-27
+R0111,Livraison,65+,2.6,Oui,2025-08-08
+R0112,Site Web,46-55,4.0,Peut-être,2025-09-03
+R0113,Livraison,26-35,3.5,Oui,2025-08-01
+R0114,Service Client,26-35,5.0,Peut-être,2025-08-11
+R0115,Prix,65+,3.9,Peut-être,2025-08-22
+R0116,Qualité Produit,26-35,3.7,Peut-être,2025-09-09
+R0117,Prix,18-25,3.2,Non,2025-08-25
+R0118,Livraison,46-55,3.1,Non,2025-08-14
+R0119,Livraison,26-35,4.4,Oui,2025-06-30
+R0120,Livraison,46-55,4.6,Non,2025-08-18
+R0121,Service Client,36-45,4.4,Non,2025-07-02
+R0122,Site Web,46-55,3.3,Peut-être,2025-07-16
+R0123,Qualité Produit,18-25,4.3,Oui,2025-08-20
+R0124,Livraison,56-65,3.1,Non,2025-09-18
+R0125,Service Client,56-65,4.7,Non,2025-08-09
+R0126,Qualité Produit,46-55,5.0,Peut-être,2025-07-19
+R0127,Service Client,46-55,3.2,Peut-être,2025-08-29
+R0128,Qualité Produit,18-25,2.7,Peut-être,2025-07-29
+R0129,Service Client,56-65,4.3,Peut-être,2025-06-27
+R0130,Livraison,36-45,3.4,Non,2025-09-14
+R0131,Qualité Produit,56-65,3.0,Non,2025-06-30
+R0132,Service Client,65+,4.2,Non,2025-07-20
+R0133,Qualité Produit,65+,3.3,Non,2025-08-12
+R0134,Prix,65+,4.5,Non,2025-07-14
+R0135,Livraison,26-35,2.8,Non,2025-06-29
+R0136,Prix,65+,5.0,Peut-être,2025-08-31
+R0137,Site Web,56-65,3.6,Non,2025-08-02
+R0138,Site Web,18-25,2.9,Non,2025-08-17
+R0139,Livraison,46-55,4.7,Peut-être,2025-07-07
+R0140,Qualité Produit,46-55,3.0,Non,2025-07-28
+R0141,Livraison,56-65,4.4,Non,2025-09-01
+R0142,Service Client,36-45,4.8,Peut-être,2025-06-30
+R0143,Site Web,36-45,2.5,Oui,2025-08-23
+R0144,Qualité Produit,26-35,3.6,Oui,2025-09-04
+R0145,Service Client,18-25,3.4,Oui,2025-07-24
+R0146,Site Web,18-25,3.8,Non,2025-07-31
+R0147,Site Web,26-35,2.5,Peut-être,2025-06-25
+R0148,Prix,46-55,2.9,Non,2025-08-22
+R0149,Livraison,65+,4.5,Peut-être,2025-09-22
+R0150,Service Client,46-55,4.2,Oui,2025-08-31
+R0151,Site Web,46-55,4.2,Oui,2025-07-13
+R0152,Livraison,18-25,3.5,Non,2025-09-05
+R0153,Prix,65+,3.6,Peut-être,2025-07-13
+R0154,Site Web,36-45,4.0,Non,2025-07-06
+R0155,Site Web,46-55,4.2,Peut-être,2025-07-27
+R0156,Livraison,65+,3.5,Non,2025-07-27
+R0157,Qualité Produit,26-35,5.0,Peut-être,2025-08-18
+R0158,Site Web,46-55,4.4,Peut-être,2025-08-23
+R0159,Qualité Produit,46-55,3.0,Oui,2025-08-17
+R0160,Livraison,36-45,4.3,Non,2025-08-13
+R0161,Site Web,18-25,2.4,Oui,2025-09-03
+R0162,Livraison,46-55,4.6,Peut-être,2025-09-03
+R0163,Livraison,18-25,4.1,Non,2025-08-01
+R0164,Qualité Produit,56-65,3.5,Non,2025-07-31
+R0165,Service Client,26-35,4.3,Non,2025-08-04
+R0166,Site Web,65+,4.4,Oui,2025-07-11
+R0167,Prix,46-55,4.7,Oui,2025-08-08
+R0168,Qualité Produit,46-55,5.0,Non,2025-07-16
+R0169,Site Web,56-65,4.0,Oui,2025-07-22
+R0170,Livraison,36-45,3.2,Non,2025-07-22
+R0171,Service Client,46-55,3.3,Non,2025-06-29
+R0172,Prix,65+,3.4,Oui,2025-07-25
+R0173,Livraison,56-65,4.1,Peut-être,2025-09-19
+R0174,Prix,56-65,4.5,Peut-être,2025-06-30
+R0175,Service Client,18-25,3.4,Peut-être,2025-07-30
+R0176,Livraison,46-55,4.7,Oui,2025-09-16
+R0177,Qualité Produit,46-55,4.0,Non,2025-08-26
+R0178,Prix,36-45,5.0,Non,2025-08-05
+R0179,Qualité Produit,46-55,3.8,Non,2025-09-12
+R0180,Prix,18-25,5.0,Peut-être,2025-07-15
+R0181,Service Client,36-45,4.3,Oui,2025-07-01
+R0182,Service Client,65+,3.4,Oui,2025-09-19
+R0183,Livraison,26-35,2.6,Oui,2025-07-05
+R0184,Livraison,26-35,3.9,Oui,2025-07-24
+R0185,Service Client,56-65,4.0,Oui,2025-07-25
+R0186,Qualité Produit,36-45,4.4,Oui,2025-07-07
+R0187,Site Web,65+,4.5,Peut-être,2025-09-08
+R0188,Livraison,36-45,3.7,Oui,2025-07-10
+R0189,Service Client,36-45,3.1,Peut-être,2025-06-28
+R0190,Prix,46-55,2.8,Peut-être,2025-08-28
+R0191,Service Client,56-65,3.8,Peut-être,2025-07-04
+R0192,Livraison,18-25,3.9,Peut-être,2025-08-15
+R0193,Site Web,18-25,3.4,Peut-être,2025-09-17
+R0194,Qualité Produit,56-65,3.2,Non,2025-06-30
+R0195,Qualité Produit,18-25,3.3,Peut-être,2025-07-02
+R0196,Qualité Produit,18-25,3.5,Non,2025-07-22
+R0197,Service Client,46-55,3.3,Non,2025-07-03
+R0198,Prix,65+,4.2,Oui,2025-07-29
+R0199,Livraison,65+,4.1,Peut-être,2025-07-01
+R0200,Qualité Produit,56-65,3.3,Peut-être,2025-07-23
+R0201,Prix,46-55,4.3,Peut-être,2025-07-09
+R0202,Qualité Produit,36-45,4.2,Oui,2025-09-11
+R0203,Qualité Produit,46-55,4.9,Oui,2025-07-25
+R0204,Site Web,56-65,5.0,Peut-être,2025-08-05
+R0205,Qualité Produit,18-25,2.1,Non,2025-08-12
+R0206,Livraison,46-55,3.2,Oui,2025-08-08
+R0207,Qualité Produit,36-45,4.2,Non,2025-07-08
+R0208,Qualité Produit,56-65,4.6,Oui,2025-07-18
+R0209,Livraison,18-25,3.6,Oui,2025-08-01
+R0210,Prix,56-65,5.0,Oui,2025-06-26
+R0211,Prix,65+,4.6,Peut-être,2025-07-22
+R0212,Prix,18-25,4.1,Oui,2025-08-16
+R0213,Livraison,46-55,4.8,Peut-être,2025-08-22
+R0214,Qualité Produit,65+,4.6,Peut-être,2025-08-06
+R0215,Prix,56-65,3.9,Peut-être,2025-08-09
+R0216,Prix,65+,4.7,Peut-être,2025-08-11
+R0217,Qualité Produit,65+,3.5,Non,2025-08-19
+R0218,Qualité Produit,36-45,3.6,Oui,2025-09-07
+R0219,Livraison,36-45,3.4,Oui,2025-07-16
+R0220,Livraison,26-35,3.6,Oui,2025-07-23
+R0221,Qualité Produit,65+,5.0,Peut-être,2025-07-17
+R0222,Site Web,36-45,2.3,Oui,2025-08-29
+R0223,Qualité Produit,26-35,4.0,Non,2025-08-31
+R0224,Qualité Produit,18-25,1.9,Peut-être,2025-07-16
+R0225,Livraison,36-45,3.4,Oui,2025-09-16
+R0226,Site Web,36-45,4.7,Peut-être,2025-09-06
+R0227,Prix,18-25,3.3,Oui,2025-07-11
+R0228,Qualité Produit,46-55,3.1,Non,2025-07-28
+R0229,Qualité Produit,26-35,2.9,Oui,2025-08-21
+R0230,Prix,18-25,3.7,Oui,2025-08-02
+R0231,Prix,18-25,2.6,Peut-être,2025-07-04
+R0232,Service Client,26-35,3.7,Oui,2025-07-12
+R0233,Qualité Produit,18-25,3.2,Oui,2025-09-07
+R0234,Site Web,46-55,3.5,Peut-être,2025-07-08
+R0235,Site Web,26-35,5.0,Peut-être,2025-08-05
+R0236,Prix,46-55,4.5,Non,2025-07-09
+R0237,Prix,36-45,2.2,Peut-être,2025-07-05
+R0238,Service Client,56-65,4.3,Peut-être,2025-09-10
+R0239,Livraison,65+,3.6,Oui,2025-08-20
+R0240,Service Client,26-35,4.2,Oui,2025-08-31
+R0241,Site Web,18-25,2.6,Oui,2025-09-22
+R0242,Prix,46-55,3.9,Peut-être,2025-07-08
+R0243,Prix,36-45,4.2,Oui,2025-08-24
+R0244,Qualité Produit,65+,4.8,Non,2025-06-25
+R0245,Prix,18-25,2.2,Peut-être,2025-08-24
+R0246,Qualité Produit,65+,3.8,Peut-être,2025-06-30
+R0247,Livraison,46-55,3.6,Oui,2025-07-15
+R0248,Livraison,65+,3.6,Oui,2025-08-19
+R0249,Livraison,18-25,4.6,Oui,2025-09-01
+R0250,Qualité Produit,56-65,4.5,Peut-être,2025-07-12
+R0251,Qualité Produit,46-55,3.0,Oui,2025-07-25
+R0252,Qualité Produit,65+,4.8,Non,2025-08-19
+R0253,Site Web,56-65,5.0,Non,2025-07-28
+R0254,Service Client,56-65,5.0,Oui,2025-07-29
+R0255,Qualité Produit,56-65,3.0,Non,2025-09-19
+R0256,Service Client,26-35,3.1,Peut-être,2025-07-11
+R0257,Site Web,18-25,4.2,Peut-être,2025-08-19
+R0258,Site Web,18-25,2.6,Oui,2025-07-24
+R0259,Site Web,65+,4.5,Non,2025-08-18
+R0260,Livraison,56-65,4.8,Non,2025-07-03
+R0261,Prix,18-25,2.5,Non,2025-08-09
+R0262,Prix,36-45,3.8,Non,2025-06-29
+R0263,Service Client,26-35,1.0,Non,2025-08-01
+R0264,Prix,36-45,3.0,Peut-être,2025-08-02
+R0265,Site Web,18-25,3.0,Non,2025-09-11
+R0266,Qualité Produit,36-45,2.8,Non,2025-09-08
+R0267,Prix,56-65,5.0,Oui,2025-06-30
+R0268,Site Web,46-55,2.9,Non,2025-09-16
+R0269,Livraison,56-65,3.8,Non,2025-07-05
+R0270,Prix,65+,4.2,Non,2025-09-16
+R0271,Livraison,36-45,5.0,Peut-être,2025-09-06
+R0272,Qualité Produit,46-55,2.9,Peut-être,2025-07-22
+R0273,Service Client,18-25,4.1,Peut-être,2025-07-07
+R0274,Livraison,65+,4.1,Oui,2025-08-14
+R0275,Site Web,18-25,2.4,Peut-être,2025-08-01
+R0276,Service Client,26-35,3.9,Oui,2025-07-25
+R0277,Service Client,65+,4.3,Oui,2025-07-21
+R0278,Qualité Produit,56-65,3.7,Peut-être,2025-08-19
+R0279,Prix,46-55,4.1,Non,2025-08-22
+R0280,Prix,56-65,3.9,Oui,2025-08-04
+R0281,Livraison,56-65,4.3,Peut-être,2025-09-05
+R0282,Service Client,36-45,4.3,Non,2025-08-10
+R0283,Site Web,36-45,5.0,Oui,2025-08-17
+R0284,Qualité Produit,56-65,3.2,Peut-être,2025-06-30
+R0285,Prix,26-35,5.0,Non,2025-07-16
+R0286,Prix,36-45,2.2,Non,2025-07-14
+R0287,Site Web,46-55,3.9,Non,2025-08-12
+R0288,Livraison,65+,4.6,Oui,2025-07-11
+R0289,Prix,26-35,3.7,Non,2025-09-17
+R0290,Qualité Produit,65+,3.6,Non,2025-06-24
+R0291,Prix,46-55,3.8,Peut-être,2025-07-01
+R0292,Livraison,46-55,3.6,Oui,2025-09-06
+R0293,Site Web,56-65,3.7,Non,2025-09-10
+R0294,Prix,18-25,3.9,Peut-être,2025-07-26
+R0295,Service Client,65+,4.4,Oui,2025-08-01
+R0296,Livraison,18-25,2.6,Non,2025-08-20
+R0297,Qualité Produit,56-65,4.9,Peut-être,2025-08-03
+R0298,Service Client,36-45,4.0,Peut-être,2025-07-16
+R0299,Prix,36-45,4.5,Peut-être,2025-07-22
+R0300,Site Web,18-25,3.7,Peut-être,2025-09-14

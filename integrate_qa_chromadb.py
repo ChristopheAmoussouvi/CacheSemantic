@@ -67,9 +67,19 @@ Description: {qa.get('description', '')}
                     # Stocker la visualisation si le fichier existe
                     viz_path = qa.get("visualization_path", "")
                     if viz_path and os.path.exists(viz_path):
-                        viz_id = viz_manager.store_visualization(
+                        # Générer un ID unique pour la visualisation
+                        viz_id = f"viz_{qa.get('id', f'qa_{i+1:03d}')}"
+                        
+                        # Encoder l'image en base64
+                        import base64
+                        with open(viz_path, 'rb') as img_file:
+                            viz_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+                        
+                        viz_manager.store_visualization(
+                            viz_id=viz_id,
                             question=qa["question"],
                             viz_path=viz_path,
+                            viz_base64=viz_base64,
                             metadata=metadata
                         )
                         metadata["viz_id"] = viz_id

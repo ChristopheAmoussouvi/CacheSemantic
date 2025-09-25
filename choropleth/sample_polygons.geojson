@@ -1,0 +1,44 @@
+{
+  "type": "FeatureCollection",
+  "name": "sample_polygons",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "PAR",
+        "name": "Zone Paris"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [2.0, 48.6],
+            [2.6, 48.6],
+            [2.6, 49.0],
+            [2.0, 49.0],
+            [2.0, 48.6]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "LYO",
+        "name": "Zone Lyon"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [4.6, 45.6],
+            [5.1, 45.6],
+            [5.1, 46.0],
+            [4.6, 46.0],
+            [4.6, 45.6]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -11,6 +11,8 @@ numpy<2.0.0  # Compatibility fix for current environment
 # Visualisations
 matplotlib>=3.6.0
 seaborn>=0.12.0
+folium>=0.15.0
+streamlit-folium>=0.18.0
 
 # Base de données vectorielle locale
 chromadb>=0.4.15

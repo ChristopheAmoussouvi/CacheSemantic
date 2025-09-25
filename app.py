@@ -10,6 +10,13 @@ import base64
 from typing import List
 import logging
 import json
+import importlib
+import streamlit.components.v1 as components
+
+# Constantes UI réutilisées
+MAP_MODE_POINTS = "Points (valeur par agence)"
+MAP_MODE_POLY = "Polygones + Points (agg par zone)"
+NONE_LABEL = "(aucune)"
 
 # Configuration de la page
 st.set_page_config(
@@ -25,6 +32,11 @@ from src.components.simple_cache import SimpleCache
 from src.components.ai_agent import LocalAIAgent
 # DataGenerator import retiré (non utilisé)
 from src.utils.example_prompts import ExamplePrompts
+from src.components.choropleth_map import (
+    build_agencies_choropleth,
+    build_region_choropleth_with_points,
+    export_map_html_bytes,
+)
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +70,7 @@ def initialize_components():
         
         return data_manager, simple_cache, ai_agent
     
-    except Exception as e:
+    except (OSError, RuntimeError) as e:
         st.error(f"Erreur lors de l'initialisation: {e}")
         st.stop()
 
@@ -119,14 +131,14 @@ def _setup_sidebar() -> List:
             selected_prompt = ""
         send_quick_prompt = st.sidebar.button("➡️ Envoyer ce prompt")
         if send_quick_prompt and selected_prompt:
-            st.session_state._queued_prompt = selected_prompt
+            st.session_state.queued_prompt = selected_prompt
     else:
         st.sidebar.info("Aucun prompt dans cette catégorie")
 
     st.sidebar.markdown("---")
     if st.sidebar.button("🎲 Prompt aléatoire"):
         cat, title, pr = ep.get_random_prompt()
-        st.session_state._queued_prompt = pr
+        st.session_state.queued_prompt = pr
         st.sidebar.success(f"{title} ({cat})")
 
     return uploader
@@ -140,7 +152,7 @@ def _process_uploaded_files(uploaded_files: List, data_manager: DataManager, ai_
             try:
                 if _index_file(file, data_manager, ai_agent):
                     success_count += 1
-            except Exception as e:  # pragma: no cover
+            except (OSError, ValueError) as e:  # pragma: no cover
                 errors.append(f"{file.name}: {e}")
     if success_count > 0:
         st.success(f"{success_count} fichier(s) traité(s) avec succès !")
@@ -160,7 +172,7 @@ def _index_file(file, data_manager: DataManager, ai_agent: LocalAIAgent) -> bool
             return True
         st.warning(f"Fichier '{file.name}' partiellement traité (indexed={indexed}, loaded={loaded})")
         return False
-    except Exception as e:  # pragma: no cover
+    except (OSError, ValueError) as e:  # pragma: no cover
         st.error(f"Erreur lors de l'indexation: {e}")
         return False
 
@@ -176,7 +188,7 @@ def _setup_chat_interface(simple_cache, ai_agent) -> None:
     _display_chat_history()
     
     # Gérer les nouvelles questions des utilisateurs
-    queued = st.session_state.pop('_queued_prompt', None) if '_queued_prompt' in st.session_state else None
+    queued = st.session_state.pop('queued_prompt', None) if 'queued_prompt' in st.session_state else None
     user_question = st.chat_input("Posez votre question sur les données...")
     if user_question is not None:
         _handle_user_question(user_question, simple_cache, ai_agent)
@@ -193,7 +205,7 @@ def _display_chat_history() -> None:
                 try:
                     img_bytes = base64.b64decode(viz_b64)
                     st.image(img_bytes, caption="Visualisation (cache)")
-                except Exception:
+                except ValueError:
                     pass
 
 def _handle_user_question(question: str, simple_cache, ai_agent) -> None:
@@ -221,7 +233,7 @@ def _get_ai_response(question: str, simple_cache: SimpleCache, ai_agent: LocalAI
         result = ai_agent.process_query(question)
         simple_cache.put(question, result)
         return result
-    except Exception as e:  # pragma: no cover
+    except (OSError, RuntimeError, ValueError) as e:  # pragma: no cover
         return {
             'response': f"Erreur lors du traitement: {e}",
             'source': 'error',
@@ -246,7 +258,7 @@ def _display_ai_response(response_data: dict) -> None:
                 file_name="visualisation.png",
                 mime="image/png"
             )
-        except Exception as e:  # pragma: no cover
+        except ValueError as e:  # pragma: no cover
             st.warning(f"Impossible d'afficher la visualisation: {e}")
     st.session_state.messages.append({
         "role": "assistant",
@@ -276,7 +288,7 @@ def _display_chart_with_download(chart_path: str) -> None:
                 file_name=chart_path.split("/")[-1],
                 mime="image/png"
             )
-    except Exception as e:
+    except (OSError, IOError, ValueError) as e:
         st.error(f"Erreur d'affichage du graphique: {str(e)}")
 
 
@@ -312,7 +324,7 @@ def show_data_preview():
 
 # Interface de navigation par onglets
 ALL_CATS_LABEL = "(Toutes)"
-tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📊 Aperçu Données", "🧪 Prompts", "⚙️ Configuration"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 Chat", "📊 Aperçu Données", "🧪 Prompts", "🗺️ Carte Choropleth", "⚙️ Configuration"])
 
 with tab1:
     # Le contenu principal est déjà affiché
@@ -462,6 +474,120 @@ with tab3:
         st.info("Aucun prompt disponible")
 
 with tab4:
+    st.header("🗺️ Carte Choropleth - Agences bancaires")
+    _, _, agent_for_map = initialize_components()
+    df_map = getattr(agent_for_map, 'current_dataframe', None)
+    if df_map is None or getattr(df_map, 'empty', True):
+        st.info("Chargez d'abord un fichier contenant des colonnes latitude, longitude et un taux de réclamations.")
+    else:
+        st.markdown("Choisissez le type de carte, sélectionnez les colonnes et appliquez un seuil optionnel.")
+        mode = st.radio("Type de carte", [MAP_MODE_POINTS, MAP_MODE_POLY])
+        cols = list(df_map.columns)
+        # Colonnes communes
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            lat_col = st.selectbox("Colonne latitude", cols, index=cols.index('latitude') if 'latitude' in cols else 0)
+        with c2:
+            lon_col = st.selectbox("Colonne longitude", cols, index=cols.index('longitude') if 'longitude' in cols else 0)
+        with c3:
+            val_col = st.selectbox("Colonne valeur (taux)", cols, index=cols.index('reclamation_rate') if 'reclamation_rate' in cols else 0)
+        with c4:
+            name_col = st.selectbox("Colonne nom (optionnel)", [NONE_LABEL] + cols)
+
+        threshold = st.number_input("Seuil minimum", min_value=0.0, step=0.1, value=0.0)
+
+        m = None
+        count_points = 0
+        count_polygons = 0
+
+        if mode == MAP_MODE_POINTS:
+            if st.button("Afficher la carte (Points)"):
+                ncol = None if name_col == NONE_LABEL else name_col
+                if lat_col and lon_col and val_col:
+                    m, count_points = build_agencies_choropleth(
+                        df_map, lat_col=lat_col, lon_col=lon_col, value_col=val_col, name_col=ncol, threshold=threshold
+                    )
+                else:
+                    st.warning("Veuillez sélectionner les colonnes latitude, longitude et valeur.")
+        else:
+            st.markdown("---")
+            st.markdown("Choropleth par polygones : importez un GeoJSON et précisez les clés de jointure.")
+            gj_file = st.file_uploader("GeoJSON des communes/régions", type=["geojson", "json"])
+            polygons = None
+            gj_key = ""
+            df_key = ""
+            if gj_file is not None:
+                try:
+                    polygons = json.loads(gj_file.getvalue().decode("utf-8"))
+                    props_keys = []
+                    try:
+                        # Collecter clés de properties depuis le premier feature
+                        features = polygons.get("features", [])
+                        if features and isinstance(features[0], dict):
+                            props = features[0].get("properties", {})
+                            if isinstance(props, dict):
+                                props_keys = list(props.keys())
+                    except (KeyError, AttributeError, TypeError):
+                        props_keys = []
+                    cpa, cpb = st.columns(2)
+                    with cpa:
+                        gj_key = st.selectbox("Propriété GeoJSON (clé de jointure)", props_keys or [""], index=0)
+                    with cpb:
+                        df_key = st.selectbox("Colonne DataFrame (clé de jointure)", cols, index=0)
+                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    st.error(f"GeoJSON invalide: {e}")
+            if st.button("Afficher la carte (Polygones + Points)"):
+                if polygons and gj_key and df_key and lat_col and lon_col and val_col:
+                    ncol = None if name_col == NONE_LABEL else name_col
+                    m, count_points, count_polygons = build_region_choropleth_with_points(
+                        df_map,
+                        polygons_geojson=polygons,
+                        join_key_geo=gj_key,
+                        join_key_df=df_key,
+                        lat_col=lat_col,
+                        lon_col=lon_col,
+                        value_col=val_col,
+                        name_col=ncol,
+                        threshold=threshold,
+                    )
+                else:
+                    st.warning("Veuillez fournir un GeoJSON et sélectionner les clés de jointure ainsi que les colonnes latitude/longitude/valeur.")
+
+        # Rendu et export (si la carte est générée)
+        if m is not None:
+            # Affichage de la carte: utiliser streamlit-folium si disponible, sinon fallback HTML autonome
+            try:
+                st_folium = getattr(importlib.import_module("streamlit_folium"), "st_folium", None)
+            except Exception:
+                st_folium = None
+            if callable(st_folium):
+                try:
+                    st_folium(m, width=1200, height=650)
+                except Exception:
+                    map_html = m.get_root().render()
+                    components.html(map_html, height=650)
+            else:
+                map_html = m.get_root().render()
+                components.html(map_html, height=650)
+
+            if mode == MAP_MODE_POINTS:
+                st.caption(f"Points affichés: {count_points}")
+            else:
+                st.caption(f"Zones: {count_polygons} | Points: {count_points}")
+
+            # Export HTML autonome
+            try:
+                html_bytes = export_map_html_bytes(m)
+                st.download_button(
+                    label="📥 Télécharger la carte (HTML)",
+                    data=html_bytes,
+                    file_name="carte_choropleth.html",
+                    mime="text/html"
+                )
+            except (OSError, ValueError) as e:
+                st.warning(f"Export HTML indisponible: {e}")
+
+with tab5:
     st.header("⚙️ Configuration")
     
     # Statistiques générales

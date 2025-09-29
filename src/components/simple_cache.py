@@ -8,6 +8,8 @@ import json
 import hashlib
 from typing import Dict, Any, Optional
 import logging
+from datetime import datetime
+import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -103,12 +105,11 @@ class SimpleCache:
             response: La réponse à mettre en cache
         """
         query_hash = self._get_query_hash(query)
-        
         # Ajouter des métadonnées
         cache_entry = {
             "original_query": query,
             "response": response,
-            "timestamp": str(pd.Timestamp.now()) if 'pandas' in globals() else str(hash(query))
+            "timestamp": datetime.now().isoformat()
         }
         
         self.cache_data[query_hash] = cache_entry

@@ -6,6 +6,7 @@ Charge le catalogue et stocke les données dans la base vectorielle.
 import json
 import os
 import sys
+import base64
 from datetime import datetime
 
 # Ajouter le répertoire racine au path
@@ -30,13 +31,11 @@ def integrate_qa_to_chromadb():
         
         # Importer les composants (avec gestion d'erreur)
         try:
-            from src.components.data_manager import DataManager
             from src.components.visualization_manager import VisualizationManager
             
             print("✅ Composants ChromaDB importés")
             
             # Initialiser les gestionnaires
-            data_manager = DataManager()
             viz_manager = VisualizationManager()
             
             # Traiter chaque Q&A
@@ -55,15 +54,7 @@ def integrate_qa_to_chromadb():
                         "qa_id": qa.get("id", f"qa_{i+1:03d}")
                     }
                     
-                    # Créer le document texte pour l'indexation
-                    document_text = f"""
-Question: {qa['question']}
-Réponse: {qa['response']}
-Type de visualisation: {qa.get('viz_type', 'unknown')}
-Dataset: {qa.get('dataset', 'unknown')}
-Description: {qa.get('description', '')}
-                    """.strip()
-                    
+
                     # Stocker la visualisation si le fichier existe
                     viz_path = qa.get("visualization_path", "")
                     if viz_path and os.path.exists(viz_path):
@@ -71,14 +62,11 @@ Description: {qa.get('description', '')}
                         viz_id = f"viz_{qa.get('id', f'qa_{i+1:03d}')}"
                         
                         # Encoder l'image en base64
-                        import base64
                         with open(viz_path, 'rb') as img_file:
                             viz_base64 = base64.b64encode(img_file.read()).decode('utf-8')
                         
                         viz_manager.store_visualization(
                             viz_id=viz_id,
-                            question=qa["question"],
-                            viz_path=viz_path,
                             viz_base64=viz_base64,
                             metadata=metadata
                         )
@@ -93,7 +81,7 @@ Description: {qa.get('description', '')}
                     if (i + 1) % 10 == 0:
                         print(f"  ✅ {i+1}/{len(qa_pairs)} Q&A traitées")
                     
-                except Exception as e:
+                except (KeyError, FileNotFoundError, ValueError) as e:
                     error_count += 1
                     print(f"  ❌ Erreur Q&A {i+1}: {e}")
             
@@ -107,7 +95,7 @@ Description: {qa.get('description', '')}
             print("📝 Création d'un index alternatif...")
             create_alternative_index(qa_pairs)
     
-    except Exception as e:
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
         print(f"❌ Erreur générale: {e}")
 
 

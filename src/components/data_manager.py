@@ -63,8 +63,7 @@ class DataManager:
         # Obtenir ou créer la collection
         try:
             self.collection = self.client.get_collection(
-                name=collection_name,
-                embedding_function=self.embedding_function
+                name=collection_name
             )
             logger.info(f"Collection '{collection_name}' chargée")
         except Exception:

@@ -151,7 +151,7 @@ class VisualizationManager:
             return plot_base64
             
         except Exception as e:
-            logger.error(f"Erreur lors de la création de la visualisation: {e}")
+            logger.error("Erreur lors de la création de la visualisation: %s", e)
             # Créer une image d'erreur
             fig, ax = plt.subplots(figsize=(8, 6))
             ax.text(0.5, 0.5, f'Erreur lors de la création\nde la visualisation:\n{str(e)}', 
@@ -196,11 +196,11 @@ class VisualizationManager:
                 ids=[viz_id]
             )
             
-            logger.info(f"Visualisation {viz_id} stockée avec succès")
+            logger.info("Visualisation %s stockée avec succès", viz_id)
             return True
             
         except Exception as e:
-            logger.error(f"Erreur lors du stockage de la visualisation: {e}")
+            logger.error("Erreur lors du stockage de la visualisation: %s", e)
             return False
     
     def get_visualization(self, viz_id: str) -> Optional[Tuple[str, Dict[str, Any]]]:
@@ -216,16 +216,28 @@ class VisualizationManager:
         try:
             results = self.viz_collection.get(ids=[viz_id])
             
-            if results['ids']:
-                metadata = results['metadatas'][0]
-                viz_base64 = metadata.get('viz_base64', '')
-                
-                return viz_base64, metadata
+            if results:
+                ids = results.get('ids')
+                metadatas = results.get('metadatas')
+                if ids and metadatas and len(metadatas) > 0:
+                    metadata = metadatas[0]
+                    viz_base64_raw = metadata.get('viz_base64', '')
+                    
+                    # Ensure viz_base64 is a string
+                    if isinstance(viz_base64_raw, str):
+                        viz_base64 = viz_base64_raw
+                    else:
+                        viz_base64 = str(viz_base64_raw) if viz_base64_raw is not None else ''
+                    
+                    # Convert ChromaDB metadata to Dict[str, Any]
+                    metadata_dict = dict(metadata) if metadata else {}
+                    
+                    return viz_base64, metadata_dict
             
             return None
             
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération de la visualisation: {e}")
+            logger.error("Erreur lors de la récupération de la visualisation: %s", e)
             return None
     
     def find_similar_visualization(self, viz_type: str, columns: Dict[str, str], data_hash: str) -> Optional[Tuple[str, Dict[str, Any]]]:
@@ -249,18 +261,38 @@ class VisualizationManager:
                 }
             )
             
-            if results['ids']:
-                # Prendre la première correspondance
-                metadata = results['metadatas'][0]
-                viz_base64 = metadata.get('viz_base64', '')
+            if results:
+                metadatas = results.get('metadatas') or []
+                ids = results.get('ids') or []
                 
-                logger.info(f"Visualisation similaire trouvée: {results['ids'][0]}")
-                return viz_base64, metadata
+                # Vérifier que nous avons au moins une metadata valide
+                if len(metadatas) > 0 and metadatas[0] is not None:
+                    metadata = metadatas[0]
+                    
+                    # Normaliser la metadata en Dict[str, Any]
+                    try:
+                        metadata_dict: Dict[str, Any] = dict(metadata) if metadata is not None else {}
+                    except Exception:
+                        # Si la conversion échoue, conserver une représentation textuelle
+                        metadata_dict = {'raw_metadata': str(metadata)}
+                    
+                    # Extraire et forcer viz_base64 en str
+                    viz_base64_raw = metadata_dict.get('viz_base64', '')
+                    if isinstance(viz_base64_raw, (bytes, bytearray)):
+                        try:
+                            viz_base64 = viz_base64_raw.decode()
+                        except Exception:
+                            viz_base64 = base64.b64encode(viz_base64_raw).decode()
+                    else:
+                        viz_base64 = str(viz_base64_raw) if viz_base64_raw is not None else ''
+                    
+                    logger.info("Visualisation similaire trouvée: %s", ids[0] if ids else 'unknown')
+                    return viz_base64, metadata_dict
             
             return None
             
         except Exception as e:
-            logger.error(f"Erreur lors de la recherche de visualisation: {e}")
+            logger.error("Erreur lors de la recherche de visualisation: %s", e)
             return None
     
     def get_or_create_visualization(self, viz_type: str, dataframe: pd.DataFrame, columns: Dict[str, str], title: str) -> Tuple[str, bool]:
@@ -283,7 +315,7 @@ class VisualizationManager:
         # Chercher une visualisation existante
         existing_viz = self.get_visualization(viz_id)
         if existing_viz:
-            logger.info(f"Visualisation récupérée du cache: {viz_id}")
+            logger.info("Visualisation récupérée du cache: %s", viz_id)
             return existing_viz[0], True
         
         # Chercher une visualisation similaire
@@ -292,7 +324,7 @@ class VisualizationManager:
             return similar_viz[0], True
         
         # Créer une nouvelle visualisation
-        logger.info(f"Création d'une nouvelle visualisation: {viz_id}")
+        logger.info("Création d'une nouvelle visualisation: %s", viz_id)
         viz_base64 = self.create_visualization(viz_type, dataframe, columns, title)
         
         # Stocker la nouvelle visualisation
@@ -325,7 +357,7 @@ class VisualizationManager:
             return visualizations
             
         except Exception as e:
-            logger.error(f"Erreur lors de la liste des visualisations: {e}")
+            logger.error("Erreur lors de la liste des visualisations: %s", e)
             return []
     
     def clear_all_visualizations(self) -> bool:
@@ -337,7 +369,7 @@ class VisualizationManager:
             return True
             
         except Exception as e:
-            logger.error(f"Erreur lors de la suppression des visualisations: {e}")
+            logger.error("Erreur lors de la suppression des visualisations: %s", e)
             return False
     
     def get_stats(self) -> Dict[str, Any]:
@@ -360,7 +392,7 @@ class VisualizationManager:
             }
             
         except Exception as e:
-            logger.error(f"Erreur lors de la récupération des statistiques: {e}")
+            logger.error("Erreur lors de la récupération des statistiques: %s", e)
             return {
                 'total_visualizations': 0,
                 'by_type': {},

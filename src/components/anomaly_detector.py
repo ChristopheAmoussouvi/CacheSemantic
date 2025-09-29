@@ -35,8 +35,8 @@ class AnomalyDetector:
         }
         
     def detect_anomalies(self, df: pd.DataFrame, 
-                        methods: List[str] = None,
-                        numerical_cols: List[str] = None) -> pd.DataFrame:
+                        methods: Optional[List[str]] = None,
+                        numerical_cols: Optional[List[str]] = None) -> pd.DataFrame:
         """Détecte les anomalies avec plusieurs méthodes."""
         if methods is None:
             methods = ['isolation_forest', 'statistical']
@@ -82,10 +82,13 @@ class AnomalyDetector:
     def _detect_statistical(self, data: pd.DataFrame) -> np.ndarray:
         """Détection statistique par Z-score."""
         try:
-            z_scores = np.abs(stats.zscore(data.fillna(data.mean()), axis=0, nan_policy='omit'))
+            # Convertir en numpy array et gérer les NaN
+            data_array = data.fillna(data.mean()).values
+            z_scores = np.array(stats.zscore(data_array, axis=0, nan_policy='omit'))
+            z_scores_abs = np.abs(z_scores)
             # Point anormal si Z-score > 3 pour au moins une variable
             threshold = 3
-            anomalies = (z_scores > threshold).any(axis=1).astype(int)
+            anomalies = (z_scores_abs > threshold).any(axis=1).astype(int)
             return anomalies
         except Exception as e:
             logger.warning(f"Erreur détection statistique: {e}")
@@ -127,7 +130,8 @@ class AnomalyDetector:
                     # Points au-delà de 2 écarts-types
                     threshold = 2
                     col_anomalies = np.abs(series - rolling_mean) > (threshold * rolling_std)
-                    anomalies = np.maximum(anomalies, col_anomalies.fillna(0).astype(int))
+                    col_anomalies_filled = col_anomalies.fillna(False).astype(int)
+                    anomalies = np.maximum(anomalies, col_anomalies_filled)
             
             return anomalies
         except Exception as e:
@@ -206,7 +210,8 @@ class AnomalyDetector:
         if 'date' in df.columns:
             df['hour'] = pd.to_datetime(df['date']).dt.hour
             anomaly_hours = anomalies['hour'].value_counts().head(3)
-            peak_hours = [{'hour': int(hour), 'count': int(count)} 
+            peak_hours = [{'hour': int(hour) if hour is not None and isinstance(hour, (int, float)) else 0, 
+                          'count': int(count) if count is not None else 0} 
                          for hour, count in anomaly_hours.items()]
         else:
             peak_hours = []

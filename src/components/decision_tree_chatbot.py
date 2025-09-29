@@ -3,9 +3,8 @@ Chatbot basé sur un arbre de décision pour l'analyse de données.
 Remplace le LLM OpenAI par une approche déterministe et locale.
 """
 
-import re
 import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -100,7 +99,7 @@ class DecisionTreeChatbot:
         
         # Étape 3: Déterminer les paramètres spécifiques
         if action_type == 'summary':
-            return self._handle_summary_request(query_lower, dataframe, columns)
+            return self._handle_summary_request(dataframe, columns)
         elif action_type == 'visualization':
             return self._handle_visualization_request(query_lower, dataframe, columns)
         elif action_type == 'analysis':
@@ -114,7 +113,7 @@ class DecisionTreeChatbot:
     
     def _classify_main_action(self, query: str) -> str:
         """Classifie l'action principale de la requête."""
-        scores = {}
+        scores: dict[str, int] = {}
         
         for action_type, keywords in self.keywords.items():
             score = sum(1 for keyword in keywords if keyword in query)
@@ -125,7 +124,7 @@ class DecisionTreeChatbot:
             return 'unknown'
         
         # Retourner l'action avec le score le plus élevé
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
     
     def _extract_columns(self, query: str, dataframe: pd.DataFrame) -> List[str]:
         """Extrait les noms de colonnes mentionnés dans la requête."""
@@ -139,7 +138,7 @@ class DecisionTreeChatbot:
         
         return found_columns
     
-    def _handle_summary_request(self, query: str, dataframe: pd.DataFrame, columns: List[str]) -> Dict[str, Any]:
+    def _handle_summary_request(self, dataframe: pd.DataFrame, columns: List[str]) -> Dict[str, Any]:
         """Traite une demande de résumé."""
         return {
             'action': 'summary',

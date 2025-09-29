@@ -5,6 +5,7 @@ Interface moderne et intuitive pour l'interaction en langage naturel.
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import os
 import base64
 from typing import List
@@ -12,6 +13,7 @@ import logging
 import json
 import importlib
 import streamlit.components.v1 as components
+from datetime import datetime, timedelta
 
 # Constantes UI réutilisées
 MAP_MODE_POINTS = "Points (valeur par agence)"
@@ -324,7 +326,7 @@ def show_data_preview():
 
 # Interface de navigation par onglets
 ALL_CATS_LABEL = "(Toutes)"
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 Chat", "📊 Aperçu Données", "🧪 Prompts", "🗺️ Carte Choropleth", "⚙️ Configuration"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["💬 Chat", "📊 Aperçu Données", "🧪 Prompts", "🗺️ Carte Choropleth", "📈 Support Analytics", "⚙️ Configuration"])
 
 with tab1:
     # Le contenu principal est déjà affiché
@@ -588,6 +590,96 @@ with tab4:
                 st.warning(f"Export HTML indisponible: {e}")
 
 with tab5:
+    st.header("📈 Enhanced Support Analytics Dashboard")
+    
+    # Import du dashboard analytics amélioré
+    try:
+        from src.components.enhanced_dashboard import EnhancedAnalyticsDashboard
+        
+        # Initialiser le dashboard
+        if 'enhanced_dashboard' not in st.session_state:
+            st.session_state.enhanced_dashboard = EnhancedAnalyticsDashboard()
+        
+        dashboard = st.session_state.enhanced_dashboard
+        
+        # Obtenir les données courantes
+        _, _, agent_for_analytics = initialize_components()
+        current_df = getattr(agent_for_analytics, 'current_dataframe', None)
+        
+        if current_df is None or current_df.empty:
+            st.info("📊 **Enhanced Support Analytics Dashboard** - Comprehensive KPI tracking and performance analytics")
+            
+            # Afficher un aperçu des fonctionnalités
+            st.subheader("🚀 Dashboard Features")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **� Key Performance Indicators**
+                - Customer Satisfaction Scores (CSAT)
+                - First Call Resolution Rates (FCR)
+                - Average Handle Time (AHT)
+                - Net Promoter Score (NPS)
+                - Ticket Volumes & Resolution Times
+                """)
+                
+                st.markdown("""
+                **� Customer Satisfaction Trends**
+                - CSAT & NPS tracking over time
+                - Dual y-axis line charts
+                - Trend analysis with markers
+                - Daily/weekly/monthly views
+                """)
+            
+            with col2:
+                st.markdown("""
+                **� Channel Performance Analysis**
+                - Ticket volumes by channel (Phone, Email, Chat, Social, Branch)
+                - Channel-specific metrics
+                - Performance comparison charts
+                - Handle time analysis by channel
+                """)
+                
+                st.markdown("""
+                **� Agent Performance Metrics**
+                - Individual agent statistics
+                - Performance scoring system
+                - Top performer identification
+                - Tickets resolved, handle times, satisfaction ratings
+                """)
+            
+            st.markdown("""
+            **🔍 Advanced Filtering & Analytics**
+            - Time range selectors with quick ranges
+            - Multi-select channel, agent, and category filters
+            - Interactive date pickers
+            - Real-time dashboard updates
+            - Ticket analytics with pie charts and trends
+            - Performance patterns by hour analysis
+            - Resolution time distribution analysis
+            """)
+            
+            # Bouton pour charger des données d'exemple avec le nouveau dashboard
+            if st.button("📊 Launch Enhanced Dashboard with Sample Data"):
+                st.success("✅ Enhanced Dashboard activated with comprehensive sample data!")
+                st.rerun()
+        
+        else:
+            # Utiliser les données courantes ou lancer avec des données d'exemple
+            df_to_use = current_df
+            
+            # Rendre le dashboard amélioré
+            dashboard.render_dashboard(df_to_use)
+    
+    except ImportError as e:
+        st.error(f"Erreur d'import du dashboard: {e}")
+        st.info("Assurez-vous que toutes les dépendances sont installées (plotly, scikit-learn)")
+    except Exception as e:
+        st.error(f"Erreur dans le dashboard analytics: {e}")
+        st.info("Rechargez la page ou contactez l'administrateur.")
+
+with tab6:
     st.header("⚙️ Configuration")
     
     # Statistiques générales

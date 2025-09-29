@@ -13,9 +13,14 @@ matplotlib>=3.6.0
 seaborn>=0.12.0
 folium>=0.15.0
 streamlit-folium>=0.18.0
+plotly>=5.15.0
 
 # Base de données vectorielle locale
 chromadb>=0.4.15
+
+# Machine Learning pour analytics avancé
+scikit-learn>=1.3.0
+scipy>=1.10.0
 
 # Utilitaires
 python-dotenv>=1.0.0

@@ -1,6 +1,41 @@
 # 🚀 Guide de Démarrage Rapide (Mise à jour 2025)
 
-Ce projet fournit un agent d'analyse de données 100% local (aucun appel OpenAI) avec interface Streamlit, génération de visualisations, gestion de prompts dynamiques et cache simple.
+Ce projet fournit un agent d'analyse de 5. Appliquer une suggestion de type de visualisation
+6. Découvrir le nouveau Dashboard Analytics avec IA
+
+---
+## 📈 Nouveau : Dashboard Analytics Avancé
+
+Le dashboard comprend 4 modules d'analyse sophistiqués :
+
+### 😊 Analyse de Sentiment
+- **Distribution en temps réel** : Positive/Neutre/Négative
+- **Tendances temporelles** : Évolution du sentiment dans le temps
+- **Analyse par canal** : Email, téléphone, chat, app
+- **Insights automatiques** : Détection de patterns et recommandations
+
+### 🚨 Détection d'Anomalies
+- **Algorithmes multiples** : Isolation Forest, analyse statistique, clustering
+- **Alertes critiques** : Notifications avec niveaux de sévérité
+- **Timeline interactive** : Visualisation des anomalies dans le temps
+- **Reconnaissance de patterns** : Identification des heures de pic
+
+### 🔮 Analytics Prédictif
+- **Prévisions IA** : Volumes tickets, satisfaction, temps de réponse
+- **Intervalles de confiance** : Prédictions avec niveaux de certitude
+- **Analyse saisonnière** : Patterns horaires, journaliers, mensuels
+- **Insights automatiques** : Recommandations basées sur les prévisions
+
+### 🗺️ Heatmap Géographique
+- **Carte interactive** : Performances par région avec couleurs
+- **Filtrage avancé** : Par région, domaine, période
+- **Recherche intégrée** : Trouver rapidement une agence
+- **Export complet** : HTML, GeoJSON, CSV
+
+Accès rapide : Onglet "📈 Analytics Dashboard" → Bouton "📊 Générer des Données d'Exemple"
+
+---
+## 🗺️ Démo Carte Choropleth (exemples inclus)ées 100% local (aucun appel OpenAI) avec interface Streamlit, génération de visualisations, gestion de prompts dynamiques et cache simple.
 
 ---
 ## ✅ Fonctionnalités Clés
@@ -10,6 +45,11 @@ Ce projet fournit un agent d'analyse de données 100% local (aucun appel OpenAI)
 - Agent IA local déterministe (arbre de décision)
 - Cache simple (réponses réutilisées instantanément)
 - Génération de visualisations (Seaborn / Matplotlib) avec export PNG
+- **NOUVEAU** : Dashboard Analytics Avancé avec IA
+  - Analyse de sentiment en temps réel
+  - Détection d'anomalies automatique  
+  - Prévisions intelligentes avec ML
+  - Heatmap géographique interactive
 - Gestion avancée des prompts :
   - Prompts d'exemple organisés par catégorie
   - Ajout de prompts personnalisés persistants (fichier JSON)

@@ -10,7 +10,8 @@ import seaborn as sns
 from datetime import datetime, timedelta
 import os
 import json
-from typing import Dict, List, Tuple, Any
+import base64
+from typing import Dict, List, Tuple, Any, Optional
 import random
 from src.utils.data_generator import DataGenerator
 from src.components.data_manager import DataManager
@@ -192,8 +193,8 @@ class QAVisualizationGenerator:
             ]
         }
     
-    def _create_visualization(self, df: pd.DataFrame, viz_config: Dict, 
-                            question: str, dataset_name: str) -> str:
+    def _create_visualization(self, df: pd.DataFrame, viz_config: Dict,
+                            question: str, dataset_name: str) -> Optional[str]:
         """
         Crée une visualisation basée sur la configuration.
         
@@ -326,9 +327,10 @@ class QAVisualizationGenerator:
             templates = self.question_templates.get(dataset_name, [])
             
             for i, template in enumerate(templates):
+                # Pré-initialiser pour éviter l'avertissement 'possibly unbound'
+                question = str(template.get("question", "Question inconnue"))
+                description = str(template.get("description", ""))
                 try:
-                    question = template["question"]
-                    description = template["description"]
                     
                     # Créer la visualisation
                     viz_path = self._create_visualization(
@@ -354,6 +356,7 @@ class QAVisualizationGenerator:
                         print(f"  ✅ Q&A {len(qa_pairs):2d}: {question[:50]}...")
                     
                 except Exception as e:
+                    # question est toujours défini grâce à la pré-initialisation
                     print(f"  ❌ Erreur pour '{question}': {e}")
         
         # Générer des variations supplémentaires
@@ -424,10 +427,10 @@ class QAVisualizationGenerator:
         ]
         
         for dataset_name, df in datasets.items():
-            for question, viz_type in specific_questions[:3]:  # Limiter pour éviter trop de générations
+            for question_text, viz_type in specific_questions[:3]:  # Limiter pour éviter trop de générations
                 try:
                     # Adapter la question au dataset
-                    adapted_question = f"{question} - Dataset {dataset_name.title()}"
+                    adapted_question = f"{question_text} - Dataset {dataset_name.title()}"
                     
                     # Configuration simple
                     template = {
@@ -468,15 +471,28 @@ class QAVisualizationGenerator:
         
         for i, qa_pair in enumerate(qa_pairs):
             try:
+                # Lire l'image et encoder en base64
+                try:
+                    with open(qa_pair["visualization_path"], "rb") as img_f:
+                        img_b64 = base64.b64encode(img_f.read()).decode('utf-8')
+                except Exception as img_err:
+                    print(f"  ❌ Impossible de lire l'image {qa_pair['visualization_path']}: {img_err}")
+                    continue
+
+                # Générer un identifiant unique (basé sur l'index et horodatage)
+                viz_id = f"qa_{i+1}_{int(datetime.now().timestamp())}"
+
                 # Stocker la visualisation dans VisualizationManager
-                viz_id = self.viz_manager.store_visualization(
-                    question=qa_pair["question"],
-                    viz_path=qa_pair["visualization_path"],
+                self.viz_manager.store_visualization(
+                    viz_id=viz_id,
+                    viz_base64=img_b64,
                     metadata={
                         "dataset": qa_pair["dataset"],
                         "viz_type": qa_pair["viz_type"],
+                        "title": qa_pair["question"],
                         "description": qa_pair["description"],
-                        "columns": qa_pair["columns"]
+                        "columns": qa_pair["columns"],
+                        "data_hash": "qa_seed"
                     }
                 )
                 

@@ -6,7 +6,7 @@ Ce module gère l'indexation et la recherche de données structurées.
 import os
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, cast
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
@@ -68,8 +68,7 @@ class DataManager:
             logger.info(f"Collection '{collection_name}' chargée")
         except Exception:
             self.collection = self.client.create_collection(
-                name=collection_name,
-                embedding_function=self.embedding_function
+                name=collection_name
             )
             logger.info(f"Nouvelle collection '{collection_name}' créée")
         
@@ -88,25 +87,25 @@ class DataManager:
             True si le chargement a réussi, False sinon
         """
         try:
-            file_path = Path(file_path)
+            file_path_obj = Path(file_path)
             
-            if not file_path.exists():
-                logger.error(f"Fichier non trouvé: {file_path}")
+            if not file_path_obj.exists():
+                logger.error(f"Fichier non trouvé: {file_path_obj}")
                 return False
             
             # Charger le fichier selon son extension
-            if file_path.suffix.lower() == '.csv':
-                df = pd.read_csv(file_path)
-            elif file_path.suffix.lower() in ['.xlsx', '.xls']:
-                df = pd.read_excel(file_path)
+            if file_path_obj.suffix.lower() == '.csv':
+                df = pd.read_csv(file_path_obj)
+            elif file_path_obj.suffix.lower() in ['.xlsx', '.xls']:
+                df = pd.read_excel(file_path_obj)
             else:
-                logger.error(f"Format de fichier non supporté: {file_path.suffix}")
+                logger.error(f"Format de fichier non supporté: {file_path_obj.suffix}")
                 return False
             
-            logger.info(f"Fichier chargé: {file_path.name} ({len(df)} lignes, {len(df.columns)} colonnes)")
+            logger.info(f"Fichier chargé: {file_path_obj.name} ({len(df)} lignes, {len(df.columns)} colonnes)")
             
             # Créer un identifiant unique pour le fichier
-            file_id = file_path.stem
+            file_id = file_path_obj.stem
             
             # Supprimer les données existantes pour ce fichier
             self._remove_file_data(file_id)
@@ -117,12 +116,12 @@ class DataManager:
             ids = []
             
             # Créer une description du schéma
-            schema_description = self._create_schema_description(df, file_path.name)
+            schema_description = self._create_schema_description(df, file_path_obj.name)
             documents.append(schema_description)
             metadatas.append({
                 'type': 'schema',
                 'file_id': file_id,
-                'file_name': file_path.name,
+                'file_name': file_path_obj.name,
                 'num_rows': len(df),
                 'num_cols': len(df.columns),
                 'columns': ','.join(df.columns.tolist())
@@ -136,14 +135,14 @@ class DataManager:
                 
                 # Créer une description textuelle du chunk
                 chunk_description = self._create_chunk_description(
-                    chunk_df, chunk_start, chunk_end, file_path.name
+                    chunk_df, chunk_start, chunk_end, file_path_obj.name
                 )
                 
                 documents.append(chunk_description)
                 metadatas.append({
                     'type': 'data_chunk',
                     'file_id': file_id,
-                    'file_name': file_path.name,
+                    'file_name': file_path_obj.name,
                     'chunk_start': chunk_start,
                     'chunk_end': chunk_end,
                     'chunk_size': len(chunk_df)
@@ -159,8 +158,8 @@ class DataManager:
             
             # Sauvegarder les métadonnées du fichier
             self.loaded_files[file_id] = {
-                'file_name': file_path.name,
-                'file_path': str(file_path),
+                'file_name': file_path_obj.name,
+                'file_path': str(file_path_obj),
                 'num_rows': len(df),
                 'num_cols': len(df.columns),
                 'columns': df.columns.tolist(),
@@ -168,7 +167,7 @@ class DataManager:
                 'sample_data': df.head(3).to_dict('records')
             }
             
-            logger.info(f"Fichier '{file_path.name}' indexé avec succès")
+            logger.info(f"Fichier '{file_path_obj.name}' indexé avec succès")
             return True
             
         except Exception as e:
@@ -180,7 +179,7 @@ class DataManager:
         try:
             # Rechercher tous les documents liés à ce fichier
             results = self.collection.get(
-                where={"file_id": file_id}
+                where=cast(Any, {"file_id": file_id})  # Type cast to avoid ChromaDB type strictness
             )
             
             if results['ids']:
@@ -243,7 +242,7 @@ class DataManager:
                     description += f"- {col}: {dict(value_counts)}\n"
         
         # Échantillon de données
-        description += f"\nÉchantillon de données:\n"
+        description += "\nÉchantillon de données:\n"
         sample_size = min(3, len(chunk_df))
         for i in range(sample_size):
             row = chunk_df.iloc[i]
@@ -279,22 +278,29 @@ class DataManager:
                 where_filter = {"file_id": file_filter}
             
             # Effectuer la recherche
-            results = self.collection.query(
-                query_texts=[query],
-                n_results=n_results,
-                where=where_filter
-            )
+            if where_filter:
+                results = self.collection.query(
+                    query_texts=[query],
+                    n_results=n_results,
+                    where=cast(Any, where_filter)  # Type cast to avoid ChromaDB type strictness
+                )
+            else:
+                results = self.collection.query(
+                    query_texts=[query],
+                    n_results=n_results
+                )
             
             # Formatter les résultats
             formatted_results = []
-            for i in range(len(results['ids'][0])):
-                result = {
-                    'id': results['ids'][0][i],
-                    'document': results['documents'][0][i],
-                    'metadata': results['metadatas'][0][i],
-                    'distance': results['distances'][0][i] if 'distances' in results else None
-                }
-                formatted_results.append(result)
+            if results and 'ids' in results and results['ids']:
+                for i in range(len(results['ids'][0])):
+                    result = {
+                        'id': results['ids'][0][i],
+                        'document': results['documents'][0][i] if results['documents'] else None,
+                        'metadata': results['metadatas'][0][i] if results['metadatas'] else None,
+                        'distance': results['distances'][0][i] if 'distances' in results and results['distances'] else None
+                    }
+                    formatted_results.append(result)
             
             logger.debug(f"Recherche '{query}' a retourné {len(formatted_results)} résultats")
             return formatted_results
@@ -346,8 +352,7 @@ class DataManager:
         try:
             self.client.reset()
             self.collection = self.client.create_collection(
-                name=self.collection_name,
-                embedding_function=self.embedding_function
+                name=self.collection_name
             )
             self.loaded_files = {}
             logger.info("Base de données réinitialisée")

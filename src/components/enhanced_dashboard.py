@@ -18,6 +18,19 @@ class EnhancedAnalyticsDashboard:
     
     def __init__(self):
         self.initialize_sample_data()
+
+    def get_sample_data(self) -> pd.DataFrame:
+        """Return the current in-memory sample dataset (alias helper)."""
+        return self.sample_data
+
+    def generate_sample_support_data(self) -> pd.DataFrame:
+        """
+        Generate and return sample support data for testing and verification.
+
+        Returns:
+            DataFrame with comprehensive sample support data
+        """
+        return self.sample_data
         
     def initialize_sample_data(self):
         """Initialize comprehensive sample data for the dashboard."""
@@ -63,6 +76,33 @@ class EnhancedAnalyticsDashboard:
         
         # Sort by date for better visualization
         self.sample_data = self.sample_data.sort_values('date').reset_index(drop=True)
+
+    # --- KPI utility (non-UI) -------------------------------------------------
+    def calculate_kpis(self, df: pd.DataFrame) -> Dict[str, float]:
+        """Compute core KPI metrics from a dataframe for verification/tests.
+
+        Returns a dictionary with numeric KPIs used in verification script.
+        """
+        metrics: Dict[str, float] = {}
+        if df.empty:
+            return {
+                'total_tickets': 0,
+                'avg_csat': 0.0,
+                'fcr_rate': 0.0,
+                'avg_handle_time': 0.0,
+                'avg_resolution_time': 0.0,
+                'nps_score': 0.0,
+                'resolution_rate': 0.0
+            }
+
+        metrics['total_tickets'] = float(len(df))
+        metrics['avg_csat'] = float(df['customer_satisfaction'].mean()) if 'customer_satisfaction' in df.columns else 0.0
+        metrics['fcr_rate'] = float(df['first_call_resolution'].mean() * 100) if 'first_call_resolution' in df.columns else 0.0
+        metrics['avg_handle_time'] = float(df['handle_time'].mean()) if 'handle_time' in df.columns else 0.0
+        metrics['avg_resolution_time'] = float(df['resolution_time'].mean()) if 'resolution_time' in df.columns else 0.0
+        metrics['nps_score'] = float(df['nps_score'].mean() * 50) if 'nps_score' in df.columns else 0.0
+        metrics['resolution_rate'] = float(df['resolved'].mean() * 100) if 'resolved' in df.columns else 0.0
+        return metrics
     
     def render_dashboard(self, df: Optional[pd.DataFrame] = None):
         """Render the complete enhanced dashboard."""

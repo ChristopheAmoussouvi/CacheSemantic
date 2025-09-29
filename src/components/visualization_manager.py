@@ -25,7 +25,6 @@ class VisualizationManager:
     Gestionnaire pour créer, stocker et récupérer des visualisations Seaborn
     dans ChromaDB de manière locale sans dépendance externe.
     """
-    
     def __init__(self, db_path: str = "./viz_chroma_db"):
         """
         Initialise le gestionnaire de visualisations.
@@ -93,13 +92,13 @@ class VisualizationManager:
                         
             elif viz_type == 'scatter':
                 if columns.get('x') and columns.get('y'):
-                    if (columns['x'] in dataframe.columns and 
+                    if (columns['x'] in dataframe.columns and
                         columns['y'] in dataframe.columns):
                         sns.scatterplot(data=dataframe, x=columns['x'], y=columns['y'], ax=ax)
                         
             elif viz_type == 'bar_chart':
                 if columns.get('x') and columns.get('y'):
-                    if (columns['x'] in dataframe.columns and 
+                    if (columns['x'] in dataframe.columns and
                         columns['y'] in dataframe.columns):
                         # Grouper les données si nécessaire
                         if dataframe[columns['x']].dtype == 'object':
@@ -111,7 +110,7 @@ class VisualizationManager:
                         
             elif viz_type == 'line_chart':
                 if columns.get('x') and columns.get('y'):
-                    if (columns['x'] in dataframe.columns and 
+                    if (columns['x'] in dataframe.columns and
                         columns['y'] in dataframe.columns):
                         # Trier par x pour une ligne cohérente
                         sorted_data = dataframe.sort_values(columns['x'])
@@ -126,16 +125,22 @@ class VisualizationManager:
                     correlation_matrix = dataframe[numeric_columns].corr()
                     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
                 else:
-                    ax.text(0.5, 0.5, 'Pas assez de colonnes numériques\npour une heatmap', 
-                           ha='center', va='center', transform=ax.transAxes)
+                    ax.text(
+                        0.5,
+                        0.5,
+                        'Pas assez de colonnes numériques\npour une heatmap',
+                        ha='center',
+                        va='center',
+                        transform=ax.transAxes
+                    )
                            
             elif viz_type == 'boxplot':
                 if columns.get('y') and columns['y'] in dataframe.columns:
                     if pd.api.types.is_numeric_dtype(dataframe[columns['y']]):
                         sns.boxplot(data=dataframe, y=columns['y'], ax=ax)
                     else:
-                        ax.text(0.5, 0.5, f'La colonne {columns["y"]} n\'est pas numérique', 
-                               ha='center', va='center', transform=ax.transAxes)
+                        ax.text(0.5, 0.5, f'La colonne {columns["y"]} n\'est pas numérique',
+                                ha='center', va='center', transform=ax.transAxes)
             
             # Ajouter le titre
             ax.set_title(title, fontsize=14, fontweight='bold')
@@ -154,16 +159,21 @@ class VisualizationManager:
             logger.error("Erreur lors de la création de la visualisation: %s", e)
             # Créer une image d'erreur
             fig, ax = plt.subplots(figsize=(8, 6))
-            ax.text(0.5, 0.5, f'Erreur lors de la création\nde la visualisation:\n{str(e)}', 
-                   ha='center', va='center', transform=ax.transAxes, fontsize=12)
+            ax.text(
+                0.5,
+                0.5,
+                f'Erreur lors de la création\nde la visualisation:\n{str(e)}',
+                ha='center',
+                va='center',
+                transform=ax.transAxes,
+                fontsize=12
+            )
             ax.set_title('Erreur de visualisation')
-            
             buffer = BytesIO()
             plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
             buffer.seek(0)
             plot_base64 = base64.b64encode(buffer.getvalue()).decode()
             plt.close()
-            
             return plot_base64
     
     def store_visualization(self, viz_id: str, viz_base64: str, metadata: Dict[str, Any]) -> bool:
@@ -328,12 +338,13 @@ class VisualizationManager:
         viz_base64 = self.create_visualization(viz_type, dataframe, columns, title)
         
         # Stocker la nouvelle visualisation
-        metadata = {
-            'viz_type': viz_type,
-            'title': title,
-            'columns': columns,
-            'data_hash': data_hash
-        }
+        # Construire un dictionnaire de métadonnées avec des clés explicitement typées str
+        metadata: Dict[str, Any] = {}
+        metadata['viz_type'] = str(viz_type)
+        metadata['title'] = str(title)
+        # Stocker les colonnes sous forme de dict sérialisé pour éviter tout type exotique
+        metadata['columns'] = columns if isinstance(columns, dict) else {}
+        metadata['data_hash'] = str(data_hash)
         
         self.store_visualization(viz_id, viz_base64, metadata)
         
@@ -343,17 +354,28 @@ class VisualizationManager:
         """Retourne la liste des visualisations stockées."""
         try:
             results = self.viz_collection.get()
-            
-            visualizations = []
-            for i, viz_id in enumerate(results['ids']):
-                metadata = results['metadatas'][i]
+
+            ids_list = results.get('ids') or []
+            metadatas_list = results.get('metadatas') or []
+
+            visualizations: List[Dict[str, Any]] = []
+            for i, viz_id in enumerate(ids_list):
+                raw_meta: Any = metadatas_list[i] if i < len(metadatas_list) else {}
+                # Normaliser la metadata en dict en évitant les None
+                if raw_meta is None:
+                    meta: Dict[str, Any] = {}
+                else:
+                    try:
+                        meta = dict(raw_meta)  # type: ignore[arg-type]
+                    except Exception:
+                        meta = {}
                 visualizations.append({
                     'id': viz_id,
-                    'type': metadata.get('viz_type', 'unknown'),
-                    'title': metadata.get('title', 'Sans titre'),
-                    'columns': metadata.get('columns', '{}')
+                    'type': meta.get('viz_type', 'unknown'),
+                    'title': meta.get('title', 'Sans titre'),
+                    'columns': meta.get('columns', '{}')
                 })
-            
+
             return visualizations
             
         except Exception as e:
@@ -379,11 +401,19 @@ class VisualizationManager:
             
             # Compter par type
             results = self.viz_collection.get()
-            type_counts = {}
-            
-            for metadata in results['metadatas']:
-                viz_type = metadata.get('viz_type', 'unknown')
-                type_counts[viz_type] = type_counts.get(viz_type, 0) + 1
+            type_counts: Dict[str, int] = {}
+            metadatas_seq = results.get('metadatas') or []
+
+            for raw_meta in metadatas_seq:
+                if not raw_meta:
+                    continue
+                try:
+                    meta = dict(raw_meta)  # type: ignore[arg-type]
+                except Exception:
+                    meta = {}
+                # Forcer la clé en chaîne pour respecter Dict[str, int]
+                viz_type_key = str(meta.get('viz_type', 'unknown'))
+                type_counts[viz_type_key] = type_counts.get(viz_type_key, 0) + 1
             
             return {
                 'total_visualizations': total_viz,

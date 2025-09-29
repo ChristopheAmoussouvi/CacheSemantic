@@ -194,7 +194,7 @@ def build_region_choropleth_with_points(
         vmax = vmin + 1e-9
 
     # Choropleth layer
-    ch = folium.Choropleth(
+    folium.Choropleth(
         geo_data=polygons_geojson,
         name="Choropleth",
         data=agg,
@@ -207,10 +207,17 @@ def build_region_choropleth_with_points(
         legend_name=f"{value_col} (moyenne par zone)",
     ).add_to(m)
 
-    # Tooltip on polygons
+    # Tooltip on polygons - Create a separate invisible GeoJson layer with tooltips
     try:
-        folium.GeoJsonTooltip(fields=[join_key_geo], aliases=["Zone:"]).add_to(ch.geojson)
-    except AttributeError:
+        # Create a separate GeoJson layer with tooltips overlay
+        # This approach is compatible with different Folium versions
+        folium.GeoJson(
+            data=polygons_geojson,
+            style_function=lambda x: {'fillOpacity': 0, 'weight': 0, 'color': 'transparent'},
+            tooltip=folium.GeoJsonTooltip(fields=[join_key_geo], aliases=["Zone:"])
+        ).add_to(m)
+    except (AttributeError, KeyError):
+        # If tooltip setup fails, continue without tooltips
         pass
 
     # Add agency markers colored by value

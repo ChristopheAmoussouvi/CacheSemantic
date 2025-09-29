@@ -50,16 +50,19 @@ class SemanticCache:
         # Chemins des fichiers de cache
         self.index_path = os.path.join(cache_dir, "faiss_index.bin")
         self.metadata_path = os.path.join(cache_dir, "cache_metadata.pkl")
-        
         # Initialiser l'index FAISS et les métadonnées
-        self.dimension = self.embedding_model.get_sentence_embedding_dimension()
+        # Récupération robuste de la dimension des embeddings (certaines stubs peuvent retourner Optional[int])
+        raw_dim = self.embedding_model.get_sentence_embedding_dimension()
+        if not isinstance(raw_dim, int) or raw_dim <= 0:
+            # Valeur de repli pour le modèle all-MiniLM-L6-v2 (384 dimensions)
+            raw_dim = 384
+        self.dimension = raw_dim  # type: int
         self.index = faiss.IndexFlatIP(self.dimension)  # Inner Product pour la similarité cosinus
         self.cache_metadata: List[Dict[str, Any]] = []
-        
+
         # Charger le cache existant
         self._load_cache()
-        
-        logger.info(f"Cache sémantique initialisé avec {len(self.cache_metadata)} entrées")
+        logger.info("Cache sémantique initialisé avec %d entrées", len(self.cache_metadata))
     
     def _load_cache(self) -> None:
         """Charge le cache existant depuis le disque."""
@@ -72,9 +75,9 @@ class SemanticCache:
                 with open(self.metadata_path, 'rb') as f:
                     self.cache_metadata = pickle.load(f)
                 
-                logger.info(f"Cache chargé avec {len(self.cache_metadata)} entrées")
+                logger.info("Cache chargé avec %d entrées", len(self.cache_metadata))
         except Exception as e:
-            logger.warning(f"Erreur lors du chargement du cache: {e}")
+            logger.warning("Erreur lors du chargement du cache: %s", e)
             # Réinitialiser en cas d'erreur
             self.index = faiss.IndexFlatIP(self.dimension)
             self.cache_metadata = []
@@ -91,7 +94,7 @@ class SemanticCache:
                 
             logger.debug("Cache sauvegardé avec succès")
         except Exception as e:
-            logger.error(f"Erreur lors de la sauvegarde du cache: {e}")
+            logger.error("Erreur lors de la sauvegarde du cache: %s", e)
     
     def _normalize_embedding(self, embedding: np.ndarray) -> np.ndarray:
         """Normalise un embedding pour la similarité cosinus."""
@@ -103,7 +106,13 @@ class SemanticCache:
     def _get_embedding(self, text: str) -> np.ndarray:
         """Génère l'embedding d'un texte."""
         embedding = self.embedding_model.encode(text)
-        return self._normalize_embedding(embedding.astype(np.float32))
+
+        # Ensure we have a numpy array and convert to float32
+        if hasattr(embedding, 'cpu'):  # PyTorch tensor
+            embedding = embedding.cpu().numpy()
+        embedding = np.array(embedding, dtype=np.float32)
+        
+        return self._normalize_embedding(embedding)
     
     def query(self, query_text: str, k: int = 5) -> Optional[Dict[str, Any]]:
         """
@@ -124,10 +133,12 @@ class SemanticCache:
             query_embedding = self._get_embedding(query_text)
             
             # Rechercher les voisins les plus proches
-            similarities, indices = self.index.search(
-                query_embedding.reshape(1, -1), 
-                min(k, len(self.cache_metadata))
+            # FAISS search returns (distances, indices)
+            search_results = self.index.search(  # type: ignore
+                x=query_embedding.reshape(1, -1),
+                k=min(k, len(self.cache_metadata))
             )
+            similarities, indices = search_results
             
             # Vérifier si la meilleure similarité dépasse le seuil
             if similarities[0][0] >= self.threshold:
@@ -136,14 +147,14 @@ class SemanticCache:
                 result['similarity_score'] = float(similarities[0][0])
                 result['cache_hit'] = True
                 
-                logger.info(f"Cache hit avec similarité: {similarities[0][0]:.3f}")
+                logger.info("Cache hit avec similarité: %.3f", similarities[0][0])
                 return result
             
-            logger.debug(f"Pas de cache hit, meilleure similarité: {similarities[0][0]:.3f}")
+            logger.debug("Pas de cache hit, meilleure similarité: %.3f", similarities[0][0])
             return None
             
         except Exception as e:
-            logger.error(f"Erreur lors de la requête cache: {e}")
+            logger.error("Erreur lors de la requête cache: %s", e)
             return None
     
     def add(
@@ -168,8 +179,14 @@ class SemanticCache:
             # Générer l'embedding
             embedding = self._get_embedding(query_text)
             
-            # Ajouter à l'index FAISS
-            self.index.add(embedding.reshape(1, -1))
+            # Ajouter à l'index FAISS (batch shape 1, dim) pour satisfaire les linters
+            # Utiliser expand_dims pour éviter les warnings de typage sur reshape
+            vector = np.expand_dims(embedding, axis=0)
+            try:
+                self.index.add(vector)  # type: ignore[attr-defined]
+            except Exception as faiss_err:  # pragma: no cover
+                logger.error("Erreur FAISS lors de l'ajout: %s", faiss_err)
+                return
             
             # Créer l'entrée de métadonnées
             cache_entry = {
@@ -185,24 +202,30 @@ class SemanticCache:
             if len(self.cache_metadata) % 10 == 0:
                 self._save_cache()
             
-            logger.debug(f"Ajouté au cache: {query_text[:50]}...")
+            logger.debug("Ajouté au cache: %s...", query_text[:50])
             
         except Exception as e:
-            logger.error(f"Erreur lors de l'ajout au cache: {e}")
+            logger.error("Erreur lors de l'ajout au cache: %s", e)
     
     def _evict_oldest(self) -> None:
         """Supprime les entrées les plus anciennes du cache."""
-        # Simple FIFO pour cette implémentation
-        # Dans une version plus avancée, on pourrait utiliser LRU
         if self.cache_metadata:
             # Reconstruire l'index sans la première entrée
             if len(self.cache_metadata) > 1:
                 new_index = faiss.IndexFlatIP(self.dimension)
-                new_metadata = self.cache_metadata[1:]
-                
+                new_metadata = self.cache_metadata[1:]            
+                # Recalculer les embeddings et effectuer un ajout batch pour éviter les faux positifs Pylint
+                vectors: List[np.ndarray] = []
                 for entry in new_metadata:
-                    embedding = self._get_embedding(entry['query'])
-                    new_index.add(embedding.reshape(1, -1))
+                    emb = self._get_embedding(entry['query'])
+                    vectors.append(emb)
+                if vectors:
+                    matrix = np.vstack(vectors).astype(np.float32)
+                    try:
+                        new_index.add(matrix)  # type: ignore[attr-defined]
+                    except Exception as faiss_err:  # pragma: no cover
+                        logger.error("Erreur FAISS lors de la reconstruction de l'index: %s", faiss_err)
+                        return
                 
                 self.index = new_index
                 self.cache_metadata = new_metadata
@@ -235,5 +258,5 @@ class SemanticCache:
         """Sauvegarde le cache lors de la destruction de l'objet."""
         try:
             self._save_cache()
-        except:
+        except Exception:
             pass

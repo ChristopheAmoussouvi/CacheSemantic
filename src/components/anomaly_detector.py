@@ -47,9 +47,10 @@ class AnomalyDetector:
         if not numerical_cols:
             # Créer des colonnes numériques factices pour la démo
             df = df.copy()
-            df['response_time'] = np.random.exponential(2, len(df))
-            df['satisfaction_score'] = np.random.normal(4, 0.8, len(df))
-            df['ticket_priority'] = np.random.randint(1, 6, len(df))
+            rng = np.random.default_rng(42)  # Use modern random generator with seed
+            df['response_time'] = rng.exponential(2, len(df))
+            df['satisfaction_score'] = rng.normal(4, 0.8, len(df))
+            df['ticket_priority'] = rng.integers(1, 6, len(df))
             numerical_cols = ['response_time', 'satisfaction_score', 'ticket_priority']
         
         results_df = df.copy()
@@ -130,6 +131,9 @@ class AnomalyDetector:
                     # Points au-delà de 2 écarts-types
                     threshold = 2
                     col_anomalies = np.abs(series - rolling_mean) > (threshold * rolling_std)
+                    # Ensure we have a pandas Series and handle NaN values
+                    if isinstance(col_anomalies, np.ndarray):
+                        col_anomalies = pd.Series(col_anomalies, index=series.index)
                     col_anomalies_filled = col_anomalies.fillna(False).astype(int)
                     anomalies = np.maximum(anomalies, col_anomalies_filled)
             

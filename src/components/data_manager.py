@@ -6,12 +6,24 @@ Ce module gère l'indexation et la recherche de données structurées.
 import os
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional, cast, Tuple
 import chromadb
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 import logging
 from pathlib import Path
+
+# Import des modules d'anonymisation (ancien et nouveau)
+try:
+    from ..utils.anonymizer import DataAnonymizer, AnonymizationConfig
+    from ..utils.enhanced_anonymizer import EnhancedDataAnonymizer, EnhancedAnonymizationConfig
+    ENHANCED_ANONYMIZER_AVAILABLE = True
+except ImportError:
+    DataAnonymizer = None
+    AnonymizationConfig = None
+    EnhancedDataAnonymizer = None
+    EnhancedAnonymizationConfig = None
+    ENHANCED_ANONYMIZER_AVAILABLE = False
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -74,6 +86,20 @@ class DataManager:
         
         # Métadonnées des fichiers chargés
         self.loaded_files: Dict[str, Dict[str, Any]] = {}
+
+        # Configuration d'anonymisation améliorée
+        self.anonymization_enabled = True
+        self.use_enhanced_anonymizer = ENHANCED_ANONYMIZER_AVAILABLE
+        
+        # Initialiser l'anonymiseur approprié
+        if ENHANCED_ANONYMIZER_AVAILABLE:
+            self.anonymizer = EnhancedDataAnonymizer()
+            self.legacy_anonymizer = DataAnonymizer() if DataAnonymizer else None
+            logger.info("Anonymiseur avancé activé avec détection des noms non communs")
+        else:
+            self.anonymizer = DataAnonymizer() if DataAnonymizer else None
+            self.legacy_anonymizer = None
+            logger.warning("Anonymiseur de base utilisé - fonctionnalités avancées non disponibles")
     
     def load_data_file(self, file_path: str, chunk_size: int = 1000) -> bool:
         """
@@ -173,6 +199,182 @@ class DataManager:
         except Exception as e:
             logger.error(f"Erreur lors du chargement du fichier: {e}")
             return False
+
+    def load_data_file_with_anonymization(
+        self,
+        file_path: str,
+        chunk_size: int = 1000,
+        enable_anonymization: bool = True,
+        anonymization_config: Optional[Any] = None
+    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        """
+        Charge un fichier avec anonymisation optionnelle des données sensibles.
+
+        Args:
+            file_path: Chemin vers le fichier à charger
+            chunk_size: Taille des chunks pour le traitement
+            enable_anonymization: Activer l'anonymisation
+            anonymization_config: Configuration d'anonymisation personnalisée
+
+        Returns:
+            Tuple (succès, informations d'anonymisation)
+        """
+        try:
+            file_path_obj = Path(file_path)
+
+            if not file_path_obj.exists():
+                logger.error(f"Fichier non trouvé: {file_path_obj}")
+                return False, None
+
+            # Charger le fichier selon son extension
+            if file_path_obj.suffix.lower() == '.csv':
+                df = pd.read_csv(file_path_obj)
+            elif file_path_obj.suffix.lower() in ['.xlsx', '.xls']:
+                df = pd.read_excel(file_path_obj)
+            else:
+                logger.error(f"Format de fichier non supporté: {file_path_obj.suffix}")
+                return False, None
+
+            logger.info(f"Fichier chargé: {file_path_obj.name} ({len(df)} lignes, {len(df.columns)} colonnes)")
+
+            # Informations d'anonymisation
+            anonymization_info = {
+                'original_shape': df.shape,
+                'anonymization_applied': False,
+                'columns_removed': [],
+                'columns_processed': [],
+                'anonymization_method': 'none'
+            }
+
+            # Appliquer l'anonymisation si activée et disponible
+            if enable_anonymization and self.anonymizer:
+                logger.info("Application de l'anonymisation...")
+
+                # Choisir l'anonymiseur approprié
+                if anonymization_config and not self.use_enhanced_anonymizer:
+                    # Utiliser l'ancien anonymiseur avec config personnalisée
+                    if DataAnonymizer:
+                        temp_anonymizer = DataAnonymizer(anonymization_config)
+                        df_anonymized, report = temp_anonymizer.anonymize_dataframe(df)
+                        anonymization_info['anonymization_method'] = 'legacy_custom'
+                    else:
+                        logger.warning("Anonymiseur de base non disponible")
+                        df_anonymized = df
+                        report = None
+                elif self.use_enhanced_anonymizer and EnhancedDataAnonymizer:
+                    # Utiliser l'anonymiseur avancé
+                    if anonymization_config and isinstance(anonymization_config, EnhancedAnonymizationConfig):
+                        temp_anonymizer = EnhancedDataAnonymizer(anonymization_config)
+                    else:
+                        temp_anonymizer = self.anonymizer
+                    
+                    df_anonymized, report = temp_anonymizer.anonymize_dataframe_advanced(df)
+                    anonymization_info['anonymization_method'] = 'enhanced'
+                    
+                    # Informations spécifiques à l'anonymiseur avancé
+                    anonymization_info.update({
+                        'uncommon_names_detected': len(report.uncommon_names_detected),
+                        'addresses_found': report.addresses_found,
+                        'anonymization_score': report.anonymization_score
+                    })
+                else:
+                    # Fallback vers l'anonymiseur de base
+                    if self.legacy_anonymizer or self.anonymizer:
+                        temp_anonymizer = self.legacy_anonymizer or self.anonymizer
+                        df_anonymized, report = temp_anonymizer.anonymize_dataframe(df)
+                        anonymization_info['anonymization_method'] = 'legacy_default'
+                    else:
+                        logger.warning("Aucun anonymiseur disponible")
+                        df_anonymized = df
+                        report = None
+
+                # Mettre à jour les informations d'anonymisation
+                if report:
+                    anonymization_info.update({
+                        'anonymization_applied': True,
+                        'columns_removed': report.columns_removed,
+                        'columns_processed': len(df_anonymized.columns),
+                        'rows_processed': getattr(report, 'total_rows_processed', len(df_anonymized)),
+                        'anonymization_report': report
+                    })
+
+                    # Utiliser les données anonymisées
+                    df = df_anonymized
+                    logger.info("Anonymisation appliquée: %d colonnes supprimées (méthode: %s)", 
+                               len(report.columns_removed), anonymization_info['anonymization_method'])
+
+            # Créer un identifiant unique pour le fichier
+            file_id = file_path_obj.stem
+
+            # Supprimer les données existantes pour ce fichier
+            self._remove_file_data(file_id)
+
+            # Préparer les documents pour l'indexation
+            documents = []
+            metadatas = []
+            ids = []
+
+            # Créer une description du schéma
+            schema_description = self._create_schema_description(df, file_path_obj.name)
+            documents.append(schema_description)
+            metadatas.append({
+                'type': 'schema',
+                'file_id': file_id,
+                'file_name': file_path_obj.name,
+                'num_rows': len(df),
+                'num_cols': len(df.columns),
+                'columns': ','.join(df.columns.tolist()),
+                'anonymized': anonymization_info['anonymization_applied']
+            })
+            ids.append(f"{file_id}_schema")
+
+            # Indexer les données par chunks
+            for chunk_start in range(0, len(df), chunk_size):
+                chunk_end = min(chunk_start + chunk_size, len(df))
+                chunk_df = df.iloc[chunk_start:chunk_end]
+
+                # Créer une description textuelle du chunk
+                chunk_description = self._create_chunk_description(
+                    chunk_df, chunk_start, chunk_end, file_path_obj.name
+                )
+
+                documents.append(chunk_description)
+                metadatas.append({
+                    'type': 'data_chunk',
+                    'file_id': file_id,
+                    'file_name': file_path_obj.name,
+                    'chunk_start': chunk_start,
+                    'chunk_end': chunk_end,
+                    'chunk_size': len(chunk_df),
+                    'anonymized': anonymization_info['anonymization_applied']
+                })
+                ids.append(f"{file_id}_chunk_{chunk_start}_{chunk_end}")
+
+            # Ajouter à ChromaDB
+            self.collection.add(
+                documents=documents,
+                metadatas=metadatas,
+                ids=ids
+            )
+
+            # Sauvegarder les métadonnées du fichier
+            self.loaded_files[file_id] = {
+                'file_name': file_path_obj.name,
+                'file_path': str(file_path_obj),
+                'num_rows': len(df),
+                'num_cols': len(df.columns),
+                'columns': df.columns.tolist(),
+                'dtypes': df.dtypes.to_dict(),
+                'sample_data': df.head(3).to_dict('records'),
+                'anonymization_info': anonymization_info
+            }
+
+            logger.info(f"Fichier '{file_path_obj.name}' indexé avec succès (anonymisation: {anonymization_info['anonymization_applied']})")
+            return True, anonymization_info
+
+        except Exception as e:
+            logger.error(f"Erreur lors du chargement du fichier avec anonymisation: {e}")
+            return False, None
     
     def _remove_file_data(self, file_id: str) -> None:
         """Supprime toutes les données d'un fichier de la collection."""

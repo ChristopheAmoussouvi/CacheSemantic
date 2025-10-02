@@ -188,7 +188,7 @@ class SpacyEnhancedDataAnonymizer:
         }
         
         # Cache pour les analyses
-        self._name_analysis_cache: Dict[str, bool] = {}
+        self._name_analysis_cache: Dict[str, Tuple[bool, float, List[str]]] = {}
         self._entropy_cache: Dict[str, float] = {}
         self._spacy_cache: Dict[str, List[str]] = {}
 
@@ -219,7 +219,7 @@ class SpacyEnhancedDataAnonymizer:
             
             # Noms de famille maghrébins
             'benali', 'ben-ali', 'benameur', 'mansouri', 'el-mansouri', 'al-mansouri',
-            'khaldoun', 'ibn-khaldoun', 'benaissa', 'bouazza', 'meziane', 'ouali',
+            'khaldoun', 'ibn-khaldoun', 'benaissa', 'bouazza', 'meziane',
             'zerhouni', 'tlemcani', 'fassi', 'alaoui', 'idrissi', 'hassani',
             
             # Noms berbères/amazighs
@@ -528,12 +528,9 @@ class SpacyEnhancedDataAnonymizer:
         confidence_score = min(confidence_score, 1.0)
 
         # Décision avec seuils adaptatifs
-        is_name = False
-        if confidence_score >= self.config.name_threshold_strict:
-            is_name = True
-        elif (confidence_score >= self.config.name_threshold_loose and 
-              self.config.detect_uncommon_names):
-            is_name = True
+        is_name = (confidence_score >= self.config.name_threshold_strict or 
+                   (confidence_score >= self.config.name_threshold_loose and 
+                    self.config.detect_uncommon_names))
 
         # Mettre en cache
         result = (is_name, confidence_score, detection_reasons)
@@ -623,7 +620,7 @@ class SpacyEnhancedDataAnonymizer:
                 # Stocker les noms détectés pour le rapport
                 self.report.uncommon_names_detected[col] = name_detections[:10]
 
-            logger.debug("Colonne '%s': score=%.3f, seuil=%.3f, ratio_noms=%.2%%, confiance=%.3f, spacy=%d", 
+            logger.debug("Colonne '%s': score=%.3f, seuil=%.3f, ratio_noms=%.2f%%, confiance=%.3f, spacy=%d", 
                         col, final_score, threshold, name_ratio, avg_confidence, len(spacy_detections))
 
         return name_columns, detailed_analysis

@@ -112,7 +112,7 @@ def simple_enhanced_anonymization_test():
         "Email: test@example.com"  # Pas une adresse
     ]
     
-    address_pattern = r'\b\d+\s+(?:rue|avenue|boulevard|place|allée)\s+[A-Za-zÀ-ÿ\s\-]+(?:,\s*\d{5}\s+[A-Za-zÀ-ÿ\-]+)?'
+    address_pattern = r'\b\d+\s+(?:rue|avenue|boulevard|place|allée)\s+[A-Za-zÀ-ÿ -]+(?:,\s*\d{5}\s+[A-Za-zÀ-ÿ -]+)?'
     
     for text in test_addresses:
         is_address = bool(re.search(address_pattern, text, re.IGNORECASE))

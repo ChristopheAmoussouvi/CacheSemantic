@@ -7,7 +7,7 @@ import os
 import pickle
 import numpy as np
 import faiss
-from typing import List, Tuple, Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 from sentence_transformers import SentenceTransformer
 import logging
 
@@ -76,7 +76,7 @@ class SemanticCache:
                     self.cache_metadata = pickle.load(f)
                 
                 logger.info("Cache chargé avec %d entrées", len(self.cache_metadata))
-        except Exception as e:
+        except (IOError, OSError, pickle.PickleError) as e:
             logger.warning("Erreur lors du chargement du cache: %s", e)
             # Réinitialiser en cas d'erreur
             self.index = faiss.IndexFlatIP(self.dimension)
@@ -93,7 +93,7 @@ class SemanticCache:
                 pickle.dump(self.cache_metadata, f)
                 
             logger.debug("Cache sauvegardé avec succès")
-        except Exception as e:
+        except (IOError, OSError, pickle.PickleError) as e:
             logger.error("Erreur lors de la sauvegarde du cache: %s", e)
     
     def _normalize_embedding(self, embedding: np.ndarray) -> np.ndarray:
@@ -153,7 +153,7 @@ class SemanticCache:
             logger.debug("Pas de cache hit, meilleure similarité: %.3f", similarities[0][0])
             return None
             
-        except Exception as e:
+        except (ValueError, IndexError, RuntimeError) as e:
             logger.error("Erreur lors de la requête cache: %s", e)
             return None
     
@@ -183,8 +183,8 @@ class SemanticCache:
             # Utiliser expand_dims pour éviter les warnings de typage sur reshape
             vector = np.expand_dims(embedding, axis=0)
             try:
-                self.index.add(vector)  # type: ignore[attr-defined]
-            except Exception as faiss_err:  # pragma: no cover
+                self.index.add(vector)  # type: ignore[call-arg]
+            except (RuntimeError, ValueError) as faiss_err:
                 logger.error("Erreur FAISS lors de l'ajout: %s", faiss_err)
                 return
             
@@ -204,7 +204,7 @@ class SemanticCache:
             
             logger.debug("Ajouté au cache: %s...", query_text[:50])
             
-        except Exception as e:
+        except (ValueError, AttributeError, RuntimeError) as e:
             logger.error("Erreur lors de l'ajout au cache: %s", e)
     
     def _evict_oldest(self) -> None:
@@ -222,8 +222,8 @@ class SemanticCache:
                 if vectors:
                     matrix = np.vstack(vectors).astype(np.float32)
                     try:
-                        new_index.add(matrix)  # type: ignore[attr-defined]
-                    except Exception as faiss_err:  # pragma: no cover
+                        new_index.add(matrix)  # type: ignore[call-arg]
+                    except (RuntimeError, ValueError) as faiss_err:
                         logger.error("Erreur FAISS lors de la reconstruction de l'index: %s", faiss_err)
                         return
                 
@@ -258,5 +258,5 @@ class SemanticCache:
         """Sauvegarde le cache lors de la destruction de l'objet."""
         try:
             self._save_cache()
-        except Exception:
+        except (IOError, OSError, pickle.PickleError):
             pass

@@ -47,7 +47,7 @@ def analyze_maghreb_arabic_names():
         
         # Noms de famille
         'benali', 'ben-ali', 'benameur', 'mansouri', 'el-mansouri', 'al-mansouri',
-        'khaldoun', 'ibn-khaldoun', 'benaissa', 'bouazza', 'meziane', 'ouali',
+        'khaldoun', 'ibn-khaldoun', 'benaissa', 'bouazza', 'meziane',
         'zerhouni', 'tlemcani', 'fassi', 'alaoui', 'idrissi', 'hassani',
         
         # Noms berbères
@@ -120,12 +120,10 @@ def analyze_maghreb_arabic_names():
         score += arabic_name_score * 0.4
         
         # 2. Patterns arabes/maghrébins
-        pattern_matched = False
         for pattern in arabic_patterns:
             if re.search(pattern, name_lower):
                 score += 0.3
-                reasons.append(f"arabic_pattern")
-                pattern_matched = True
+                reasons.append("arabic_pattern")
                 break
         
         # 3. Analyse d'entropie (ajustée pour être moins stricte)

@@ -1,0 +1,777 @@
+{
+  "metadata": {
+    "total_prompts": 150,
+    "categories": 15,
+    "generated_at": "2025-10-03T02:20:02.330716",
+    "version": "1.0"
+  },
+  "categories": [
+    "resume_general",
+    "visualisation_distribution",
+    "visualisation_correlation",
+    "visualisation_comparaison",
+    "visualisation_temporelle",
+    "visualisation_matrice",
+    "visualisation_dispersion",
+    "analyse_statistiques",
+    "analyse_top",
+    "analyse_filtres",
+    "analyse_comparaison",
+    "analyse_tendances",
+    "analyse_agrégation",
+    "questions_specifiques",
+    "questions_business"
+  ],
+  "prompts": [
+    {
+      "category": "resume_general",
+      "prompt": "Résume les données",
+      "dataset": "ventes"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Donne-moi un aperçu",
+      "dataset": "finances"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Montre-moi les statistiques principales",
+      "dataset": "ventes"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Quelles données avons-nous ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Affiche un overview",
+      "dataset": "ventes"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Présente les informations disponibles",
+      "dataset": "finances"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Décris les données chargées",
+      "dataset": "finances"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Combien de lignes et colonnes ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Quels types de données ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "resume_general",
+      "prompt": "Y a-t-il des valeurs manquantes ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Crée un histogramme des ventes",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Montre la distribution des prix",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Affiche la répartition des quantités",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Fais un graphique de distribution",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Visualise les fréquences",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Histogramme des scores",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Distribution par catégorie",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Répartition des valeurs",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Graphique de densité",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_distribution",
+      "prompt": "Montre les distributions",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Corrélation entre prix et ventes",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Scatter plot prix vs quantité",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Relation entre deux variables",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Nuage de points ventes/budget",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Y a-t-il un lien entre X et Y ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Montre la relation entre variables",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Affiche les corrélations",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Crée un scatter des données",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Visualise les dépendances",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_correlation",
+      "prompt": "Graphique de corrélation",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Ventes par région",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Compare les performances entre groupes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Graphique des moyennes par catégorie",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Affiche les totaux par mois",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Ventes par vendeur",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Revenus par département",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Bar chart des ventes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Compare les régions",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Performance par équipe",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_comparaison",
+      "prompt": "Totaux par segment",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Évolution des ventes dans le temps",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Tendance des prix",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Courbe temporelle",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Progression mensuelle",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Évolution annuelle",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Tendance sur 6 mois",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Line chart temporel",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Série chronologique",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Graphique d'évolution",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_temporelle",
+      "prompt": "Analyse temporelle",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Heatmap des corrélations",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Matrice de corrélation",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Relations entre toutes les variables",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Carte de chaleur",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Corrélations multiples",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Visualisation matricielle",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Heatmap complète",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Toutes les corrélations",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Matrice de covariance",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_matrice",
+      "prompt": "Graphique de corrélation multiple",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Boxplot des ventes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Distribution avec outliers",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Quartiles des prix",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Valeurs aberrantes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Dispersion des données",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Boîte à moustaches",
+      "dataset": "finances"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Analyse des outliers",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Graphique de dispersion",
+      "dataset": "clients"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Distribution statistique",
+      "dataset": "ventes"
+    },
+    {
+      "category": "visualisation_dispersion",
+      "prompt": "Variabilité des données",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Moyenne des ventes",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Médiane des prix",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Total des quantités",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Écart-type",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Variance",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Percentiles",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Statistiques descriptives",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Valeurs min et max",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Amplitude des données",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_statistiques",
+      "prompt": "Coefficient de variation",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Top 5 produits",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Meilleurs vendeurs",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Meilleures régions",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Produits les plus vendus",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Top performers",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Classement des ventes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Top 10 clients",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Meilleures performances",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Ranking par ventes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_top",
+      "prompt": "Leaders du marché",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Ventes supérieures à 1000",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Filtre région Nord",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Données de janvier",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Scores supérieurs à 80",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Prix entre 50 et 100",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Sélectionne catégorie A",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Filtre par vendeur",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Données récentes",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Valeurs positives uniquement",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_filtres",
+      "prompt": "Période spécifique",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Compare Nord et Sud",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Quelle région performe mieux ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Différence entre A et B",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Comparaison temporelle",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Avant vs après",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Groupe 1 vs Groupe 2",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Performance relative",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Écart entre régions",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Meilleur que la moyenne ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_comparaison",
+      "prompt": "Qui est en tête ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Tendance des ventes",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Croissance ou décroissance ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Y a-t-il une saisonnalité ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Performance s'améliore ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Évolution sur 6 mois",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Ventes en hausse ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Tendance baissière ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Cycles dans les données",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Trajectoire future",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_tendances",
+      "prompt": "Pattern temporel",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Somme par groupe",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Moyenne par catégorie",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Total par région",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Agrégation mensuelle",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Groupement par segment",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Consolidation des données",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Résumé par période",
+      "dataset": "ventes"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Totaux par type",
+      "dataset": "clients"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Moyennes groupées",
+      "dataset": "finances"
+    },
+    {
+      "category": "analyse_agrégation",
+      "prompt": "Agrégation temporelle",
+      "dataset": "ventes"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Quel est le chiffre d'affaires ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Combien de clients avons-nous ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Quelle est la marge moyenne ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Volume total des ventes ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Taux de satisfaction ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Budget disponible ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Revenus du mois ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Performance globale ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "Objectifs atteints ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "questions_specifiques",
+      "prompt": "ROI actuel ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Quelle stratégie recommandes-tu ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Où investir en priorité ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Quels produits développer ?",
+      "dataset": "ventes"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Quelles régions cibler ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Opportunités de croissance ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Points d'amélioration ?",
+      "dataset": "clients"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Risques identifiés ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Forces et faiblesses ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "Plan d'action ?",
+      "dataset": "finances"
+    },
+    {
+      "category": "questions_business",
+      "prompt": "KPI à surveiller ?",
+      "dataset": "clients"
+    }
+  ]
+}

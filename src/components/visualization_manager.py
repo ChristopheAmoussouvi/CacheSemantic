@@ -1,17 +1,16 @@
 """
-Gestionnaire de visualisations utilisant ChromaDB pour stocker des graphiques Seaborn prégénérés.
+Gestionnaire de visualisations utilisant ChromaDB pour stocker des graphiques Matplotlib.
 Remplace le système de génération dynamique par un système de cache de visualisations.
 """
 
 import os
-import pickle
 import base64
 import hashlib
 from io import BytesIO
 from typing import Dict, List, Any, Optional, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
 import chromadb
 from chromadb.config import Settings
 import logging
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class VisualizationManager:
     """
-    Gestionnaire pour créer, stocker et récupérer des visualisations Seaborn
+    Gestionnaire pour créer, stocker et récupérer des visualisations Matplotlib
     dans ChromaDB de manière locale sans dépendance externe.
     """
     def __init__(self, db_path: str = "./viz_chroma_db"):
@@ -45,7 +44,7 @@ class VisualizationManager:
         try:
             self.viz_collection = self.client.get_collection("visualizations")
             logger.info("Collection de visualisations chargée")
-        except Exception:
+        except (ValueError, RuntimeError):
             self.viz_collection = self.client.create_collection("visualizations")
             logger.info("Nouvelle collection de visualisations créée")
     
@@ -60,7 +59,7 @@ class VisualizationManager:
     
     def create_visualization(self, viz_type: str, dataframe: pd.DataFrame, columns: Dict[str, str], title: str) -> str:
         """
-        Crée une visualisation Seaborn et la retourne en base64.
+        Crée une visualisation Matplotlib et la retourne en base64.
         
         Args:
             viz_type: Type de visualisation ('histogram', 'scatter', etc.)
@@ -72,29 +71,49 @@ class VisualizationManager:
             Image encodée en base64
         """
         try:
-            # Configuration du style Seaborn
+            # Configuration du style Matplotlib
             plt.style.use('default')
-            sns.set_palette("husl")
             
-            fig, ax = plt.subplots(figsize=(10, 6))
+            # Palette de couleurs personnalisée
+            colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+                     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+            
+            _fig, ax = plt.subplots(figsize=(10, 6))
             
             if viz_type == 'histogram':
                 if columns.get('x') and columns['x'] in dataframe.columns:
                     data = dataframe[columns['x']].dropna()
                     if pd.api.types.is_numeric_dtype(data):
-                        sns.histplot(data=dataframe, x=columns['x'], bins=20, ax=ax)
-                        ax.set_ylabel('Fréquence')
+                        # Histogramme pour données numériques
+                        ax.hist(data, bins=20, color=colors[0], alpha=0.7, edgecolor='black')
+                        ax.set_xlabel(columns['x'], fontsize=11)
+                        ax.set_ylabel('Fréquence', fontsize=11)
+                        ax.grid(axis='y', alpha=0.3, linestyle='--')
                     else:
-                        # Pour les données catégorielles
-                        sns.countplot(data=dataframe, x=columns['x'], ax=ax)
-                        plt.xticks(rotation=45)
-                        ax.set_ylabel('Nombre')
+                        # Graphique en barres pour données catégorielles
+                        value_counts = data.value_counts()
+                        x_pos = np.arange(len(value_counts))
+                        ax.bar(x_pos, value_counts.values, color=colors[:len(value_counts)], 
+                              alpha=0.7, edgecolor='black')
+                        ax.set_xticks(x_pos)
+                        ax.set_xticklabels(value_counts.index, rotation=45, ha='right')
+                        ax.set_xlabel(columns['x'], fontsize=11)
+                        ax.set_ylabel('Nombre', fontsize=11)
+                        ax.grid(axis='y', alpha=0.3, linestyle='--')
                         
             elif viz_type == 'scatter':
                 if columns.get('x') and columns.get('y'):
                     if (columns['x'] in dataframe.columns and
                         columns['y'] in dataframe.columns):
-                        sns.scatterplot(data=dataframe, x=columns['x'], y=columns['y'], ax=ax)
+                        # Aligner les données (supprimer les NaN)
+                        valid_mask = dataframe[[columns['x'], columns['y']]].notna().all(axis=1)
+                        x_clean = dataframe.loc[valid_mask, columns['x']]
+                        y_clean = dataframe.loc[valid_mask, columns['y']]
+                        ax.scatter(x_clean, y_clean, color=colors[0], alpha=0.6, 
+                                  edgecolor='black', s=50)
+                        ax.set_xlabel(columns['x'], fontsize=11)
+                        ax.set_ylabel(columns['y'], fontsize=11)
+                        ax.grid(True, alpha=0.3, linestyle='--')
                         
             elif viz_type == 'bar_chart':
                 if columns.get('x') and columns.get('y'):
@@ -102,11 +121,20 @@ class VisualizationManager:
                         columns['y'] in dataframe.columns):
                         # Grouper les données si nécessaire
                         if dataframe[columns['x']].dtype == 'object':
-                            grouped_data = dataframe.groupby(columns['x'])[columns['y']].mean().reset_index()
-                            sns.barplot(data=grouped_data, x=columns['x'], y=columns['y'], ax=ax)
+                            grouped_data = dataframe.groupby(columns['x'])[columns['y']].mean()
+                            x_pos = np.arange(len(grouped_data))
+                            ax.bar(x_pos, grouped_data.values, 
+                                  color=colors[:len(grouped_data)], 
+                                  alpha=0.7, edgecolor='black')
+                            ax.set_xticks(x_pos)
+                            ax.set_xticklabels(grouped_data.index, rotation=45, ha='right')
                         else:
-                            sns.barplot(data=dataframe, x=columns['x'], y=columns['y'], ax=ax)
-                        plt.xticks(rotation=45)
+                            ax.bar(dataframe[columns['x']], dataframe[columns['y']], 
+                                  color=colors[0], alpha=0.7, edgecolor='black')
+                            plt.xticks(rotation=45, ha='right')
+                        ax.set_xlabel(columns['x'], fontsize=11)
+                        ax.set_ylabel(columns['y'], fontsize=11)
+                        ax.grid(axis='y', alpha=0.3, linestyle='--')
                         
             elif viz_type == 'line_chart':
                 if columns.get('x') and columns.get('y'):
@@ -114,8 +142,13 @@ class VisualizationManager:
                         columns['y'] in dataframe.columns):
                         # Trier par x pour une ligne cohérente
                         sorted_data = dataframe.sort_values(columns['x'])
-                        sns.lineplot(data=sorted_data, x=columns['x'], y=columns['y'], ax=ax, marker='o')
-                        plt.xticks(rotation=45)
+                        ax.plot(sorted_data[columns['x']], sorted_data[columns['y']], 
+                               color=colors[0], linewidth=2, marker='o', markersize=6,
+                               markerfacecolor=colors[1], markeredgecolor='black')
+                        ax.set_xlabel(columns['x'], fontsize=11)
+                        ax.set_ylabel(columns['y'], fontsize=11)
+                        ax.grid(True, alpha=0.3, linestyle='--')
+                        plt.xticks(rotation=45, ha='right')
                         
             elif viz_type == 'heatmap':
                 numeric_columns = columns.get('columns', dataframe.select_dtypes(include=['number']).columns.tolist())
@@ -123,7 +156,27 @@ class VisualizationManager:
                     # Limiter à 10 colonnes pour la lisibilité
                     numeric_columns = numeric_columns[:10]
                     correlation_matrix = dataframe[numeric_columns].corr()
-                    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, ax=ax)
+                    
+                    # Créer la heatmap avec matplotlib
+                    im = ax.imshow(correlation_matrix, cmap='coolwarm', aspect='auto',
+                                  vmin=-1, vmax=1)
+                    
+                    # Ajouter une colorbar
+                    cbar = plt.colorbar(im, ax=ax)
+                    cbar.set_label('Corrélation', fontsize=11)
+                    
+                    # Ajouter les annotations
+                    for i in range(len(correlation_matrix)):
+                        for j in range(len(correlation_matrix.columns)):
+                            ax.text(j, i, f'{correlation_matrix.iloc[i, j]:.2f}',
+                                   ha='center', va='center', color='black',
+                                   fontsize=9)
+                    
+                    # Configurer les ticks
+                    ax.set_xticks(np.arange(len(correlation_matrix.columns)))
+                    ax.set_yticks(np.arange(len(correlation_matrix.index)))
+                    ax.set_xticklabels(correlation_matrix.columns, rotation=45, ha='right')
+                    ax.set_yticklabels(correlation_matrix.index)
                 else:
                     ax.text(
                         0.5,
@@ -131,19 +184,35 @@ class VisualizationManager:
                         'Pas assez de colonnes numériques\npour une heatmap',
                         ha='center',
                         va='center',
-                        transform=ax.transAxes
+                        transform=ax.transAxes,
+                        fontsize=12
                     )
                            
             elif viz_type == 'boxplot':
                 if columns.get('y') and columns['y'] in dataframe.columns:
                     if pd.api.types.is_numeric_dtype(dataframe[columns['y']]):
-                        sns.boxplot(data=dataframe, y=columns['y'], ax=ax)
+                        data_clean = dataframe[columns['y']].dropna()
+                        bp = ax.boxplot([data_clean], tick_labels=[columns['y']], 
+                                       patch_artist=True, widths=0.6)
+                        # Personnaliser les couleurs
+                        for patch in bp['boxes']:
+                            patch.set_facecolor(colors[0])
+                            patch.set_alpha(0.7)
+                        for whisker in bp['whiskers']:
+                            whisker.set(color='black', linewidth=1.5)
+                        for cap in bp['caps']:
+                            cap.set(color='black', linewidth=1.5)
+                        for median in bp['medians']:
+                            median.set(color='red', linewidth=2)
+                        ax.set_ylabel('Valeurs', fontsize=11)
+                        ax.grid(axis='y', alpha=0.3, linestyle='--')
                     else:
                         ax.text(0.5, 0.5, f'La colonne {columns["y"]} n\'est pas numérique',
-                                ha='center', va='center', transform=ax.transAxes)
+                                ha='center', va='center', transform=ax.transAxes,
+                                fontsize=12)
             
             # Ajouter le titre
-            ax.set_title(title, fontsize=14, fontweight='bold')
+            ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
             plt.tight_layout()
             
             # Convertir en base64
@@ -155,10 +224,10 @@ class VisualizationManager:
             
             return plot_base64
             
-        except Exception as e:
+        except (IOError, RuntimeError, ValueError) as e:
             logger.error("Erreur lors de la création de la visualisation: %s", e)
             # Créer une image d'erreur
-            fig, ax = plt.subplots(figsize=(8, 6))
+            _fig, ax = plt.subplots(figsize=(8, 6))
             ax.text(
                 0.5,
                 0.5,
@@ -209,7 +278,7 @@ class VisualizationManager:
             logger.info("Visualisation %s stockée avec succès", viz_id)
             return True
             
-        except Exception as e:
+        except (IOError, RuntimeError, ValueError) as e:
             logger.error("Erreur lors du stockage de la visualisation: %s", e)
             return False
     
@@ -246,7 +315,7 @@ class VisualizationManager:
             
             return None
             
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             logger.error("Erreur lors de la récupération de la visualisation: %s", e)
             return None
     
@@ -301,7 +370,7 @@ class VisualizationManager:
             
             return None
             
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             logger.error("Erreur lors de la recherche de visualisation: %s", e)
             return None
     
@@ -378,7 +447,7 @@ class VisualizationManager:
 
             return visualizations
             
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             logger.error("Erreur lors de la liste des visualisations: %s", e)
             return []
     
@@ -390,7 +459,7 @@ class VisualizationManager:
             logger.info("Toutes les visualisations ont été supprimées")
             return True
             
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             logger.error("Erreur lors de la suppression des visualisations: %s", e)
             return False
     
@@ -421,7 +490,7 @@ class VisualizationManager:
                 'db_path': self.db_path
             }
             
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             logger.error("Erreur lors de la récupération des statistiques: %s", e)
             return {
                 'total_visualizations': 0,

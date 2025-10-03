@@ -8,9 +8,8 @@ streamlit>=1.28.0
 pandas>=2.0.0
 numpy<2.0.0  # Compatibility fix for current environment
 
-# Visualisations
+# Visualisations (Matplotlib uniquement - Seaborn retiré)
 matplotlib>=3.6.0
-seaborn>=0.12.0
 folium>=0.15.0
 streamlit-folium>=0.18.0
 plotly>=5.15.0

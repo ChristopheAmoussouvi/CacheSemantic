@@ -32,6 +32,7 @@ st.set_page_config(
 from src.components.data_manager import DataManager
 from src.components.simple_cache import SimpleCache
 from src.components.ai_agent import LocalAIAgent
+from src.components.auto_plotter import AutoPlotter
 # DataGenerator import retiré (non utilisé)
 from src.utils.example_prompts import ExamplePrompts
 from src.components.choropleth_map import (
@@ -146,34 +147,73 @@ def _setup_sidebar() -> List:
     return uploader
 
 def _process_uploaded_files(uploaded_files: List, data_manager: DataManager, ai_agent: LocalAIAgent) -> None:
-    """Traiter et indexer les fichiers uploadés (ChromaDB + chargement agent)."""
+    """Traiter et indexer les fichiers uploadés (ChromaDB + chargement agent) + génération auto de plots."""
     success_count = 0
     errors: list[str] = []
+    auto_plotter = AutoPlotter(export_dir="./exports")
+    
     with st.spinner("Traitement des fichiers..."):
         for file in uploaded_files:
             try:
-                if _index_file(file, data_manager, ai_agent):
+                if _index_file(file, data_manager, ai_agent, auto_plotter):
                     success_count += 1
             except (OSError, ValueError) as e:  # pragma: no cover
                 errors.append(f"{file.name}: {e}")
+    
     if success_count > 0:
         st.success(f"{success_count} fichier(s) traité(s) avec succès !")
     for err in errors:
         st.error(f"Erreur fichier - {err}")
 
-def _index_file(file, data_manager: DataManager, ai_agent: LocalAIAgent) -> bool:
-    """Indexer le fichier dans ChromaDB et charger le DataFrame dans l'agent."""
+def _index_file(file, data_manager: DataManager, ai_agent: LocalAIAgent, auto_plotter: AutoPlotter) -> bool:
+    """Indexer le fichier dans ChromaDB, charger dans l'agent et générer des visualisations auto."""
     try:
         temp_path = f"temp_{file.name}"
         with open(temp_path, "wb") as f:
             f.write(file.getbuffer())
+        
         indexed = data_manager.load_data_file(temp_path)
         loaded = ai_agent.load_data_for_analysis(temp_path)
+        
         if indexed and loaded:
             st.info(f"Fichier '{file.name}' indexé et chargé")
+            
+            # Générer automatiquement des visualisations
+            with st.spinner("📊 Génération automatique de visualisations..."):
+                try:
+                    # Charger le DataFrame pour analyse
+                    if temp_path.endswith('.csv'):
+                        df = pd.read_csv(temp_path)
+                    else:
+                        df = pd.read_excel(temp_path)
+                    
+                    # Générer les plots automatiques
+                    plots = auto_plotter.generate_auto_plots(df, max_plots=6)
+                    
+                    if plots:
+                        st.success(f"✅ {len(plots)} visualisations générées automatiquement !")
+                        
+                        # Afficher les visualisations dans une section expandable
+                        with st.expander(f"📊 Visualisations automatiques de {file.name}", expanded=True):
+                            # Créer une grille 2x3
+                            cols_per_row = 2
+                            for i in range(0, len(plots), cols_per_row):
+                                cols = st.columns(cols_per_row)
+                                for j, (title, filepath) in enumerate(plots[i:i+cols_per_row]):
+                                    with cols[j]:
+                                        st.image(filepath, caption=title, use_container_width=True)
+                    else:
+                        st.info("ℹ️ Aucune visualisation automatique générée")
+                        
+                except Exception as e:
+                    logger.error(f"Erreur lors de la génération des plots automatiques: {e}")
+                    st.warning(f"⚠️ Impossible de générer les visualisations automatiques: {e}")
+            
             return True
+        
         st.warning(f"Fichier '{file.name}' partiellement traité (indexed={indexed}, loaded={loaded})")
         return False
+    
     except (OSError, ValueError) as e:  # pragma: no cover
         st.error(f"Erreur lors de l'indexation: {e}")
         return False
